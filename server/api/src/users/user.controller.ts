@@ -5,7 +5,7 @@ import {UserService} from './user.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 
-@Controller('api/user')
+@Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -19,6 +19,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get("/test")
   async findUser(@Param('id') id: number): Promise<User>{
+    console.log("findUser======================", id);
     return this.userService.findById(id);
   }
 
