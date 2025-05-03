@@ -6,19 +6,21 @@ import { firstValueFrom } from "rxjs";
 import { User } from "src/users/entities/user.entity";
 import { Repository } from "typeorm";
 import { kakaoUser } from "./interfaces/kakao.user.interface";
-import { throwBadRequest } from "src/common/exceptions/error.helper";
+import { throwBadRequest, throwUnauthorizedException } from "src/common/exceptions/error.helper";
 import { ResponseLoginDto } from "./dto/response-login.dto";
 import { ResponseJoinDto } from "./dto/response-join.dto";
 import { ResponseOauthLoginDto } from "./dto/response-oauth-login.dto";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class AuthService {
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
+        private readonly configService: ConfigService,
         private httpService: HttpService,
         private jwtService: JwtService
-    ) {}
+    ) { }
 
     async kakaoLogin(kakaoAccessToken: string) {
         const kakaoResponse = await firstValueFrom(
@@ -40,7 +42,7 @@ export class AuthService {
         //HACK: 이메일 제공 동의를 안하면 이메일이 안넘어 옴.
         //일단 배제하고 구현.
         const email: string = kakaoUser.email;
-        if(!email) {
+        if (!email) {
             throw new Error('이메일이 제공되지 않았습니다. 카카오 계정에서 이메일 제공을 허용해주세요.');
         }
 
@@ -48,10 +50,10 @@ export class AuthService {
         const user = await this.userRepository.findOneBy(
             { email: email }
         );
-        if(!user) {
+        if (!user) {
             //유저가 없으면 생성합니다.
             const kakaoId: string = kakaoUser.id.toString();
-            const dto :Promise<ResponseOauthLoginDto> = this.createUserTemporary(kakaoUser);
+            const dto: Promise<ResponseOauthLoginDto> = this.createUserTemporary(kakaoUser);
             return dto;
         } else {
             //유저가 있으면 리턴
@@ -60,34 +62,62 @@ export class AuthService {
                 email: user.email,
                 status: user.status
             };
-            const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
+            const accessToken = this.jwtService.sign(payload, { expiresIn: '1m' });
             const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
             user.refresh_token = refreshToken;
-            await this.userRepository.save(user);
-            const dto :ResponseOauthLoginDto = ResponseOauthLoginDto.fromEntity(user, accessToken, refreshToken)
+            await this.userRepository.update(user.id, { refresh_token: refreshToken });
+            const dto: ResponseOauthLoginDto = ResponseOauthLoginDto.fromEntity(user, accessToken, refreshToken)
             return dto;
         }
     }
 
-    private async createUserTemporary(kakaoUser: kakaoUser): Promise<ResponseOauthLoginDto>  {
+    private async createUserTemporary(kakaoUser: kakaoUser): Promise<ResponseOauthLoginDto> {
         const tempUser = new User();
         tempUser.serial_number = kakaoUser.id;
         tempUser.provider = kakaoUser.provider;
         tempUser.email = kakaoUser.email;
         tempUser.status = 'Incomplete Registration';
-        const newUser :User = await this.userRepository.save(tempUser);
+        const newUser: User = await this.userRepository.save(tempUser);
         //JWT 토큰 발급
-        const payload = { 
+        const payload = {
             sub: newUser.id,
             email: newUser.email,
             status: newUser.status
         };
-        const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
+        const accessToken = this.jwtService.sign(payload, { expiresIn: '1m' });
         const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
-        
         newUser.refresh_token = refreshToken;
-        await this.userRepository.save(newUser);
-        const dto :ResponseOauthLoginDto = ResponseOauthLoginDto.fromEntity(newUser, accessToken, refreshToken)
+        await this.userRepository.update(newUser.id, { refresh_token: refreshToken });
+        const dto: ResponseOauthLoginDto = ResponseOauthLoginDto.fromEntity(newUser, accessToken, refreshToken)
         return dto;
     }
+
+    async refreshToken(refreshToken: string) {
+        let payload: any;
+        //토큰이 만료되었는지 검증합니다.
+        try {
+            payload = this.jwtService.verify(refreshToken);
+        } catch (error) {
+            if (error.name === 'TokenExpiredError') {
+                throwUnauthorizedException('Refresh Token이 만료되었습니다.', 'REFRESH_TOKEN_EXPIRED');
+            } else if (error.name === 'JsonWebTokenError') {
+                throwUnauthorizedException('Refresh Token이 위조되었거나 잘못되었습니다.', 'REFRESH_TOKEN_INVALID');
+            }
+            // 그 외 예상치 못한 검증 오류
+            throwUnauthorizedException('Refresh Token 검증에 실패했습니다.', 'REFRESH_TOKEN_VERIFY_FAILED');
+        }
+
+        const user = await this.userRepository.findOneBy({ id: payload.sub });
+        if (!user) {
+            throwUnauthorizedException('유저를 찾을 수 없습니다.', 'USER_NOT_FOUND');
+            return;
+        }
+        if (user.refresh_token !== refreshToken) {
+            throwUnauthorizedException('Refresh Token이 위조되었거나 잘못되었습니다.', 'REFRESH_TOKEN_INVALID');
+            return;
+        }
+        const newAccessToken = this.jwtService.sign({ sub: user.id, email: user.email, status: user.status }, { expiresIn: '1m' });
+        return { accessToken: newAccessToken };
+    }
+
 }

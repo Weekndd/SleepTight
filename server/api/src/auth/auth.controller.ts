@@ -12,4 +12,10 @@ export class AuthController {
     async kakaoLogin(@Body('AuthroziationCode') accessToken: string) {
         return this.authService.kakaoLogin(accessToken);
     }
+
+    @HttpCode(200)
+    @Post('refresh')
+    async refreshToken(@Body('refreshToken') refreshToken: string) {
+        return this.authService.refreshToken(refreshToken);
+    }
 } 
