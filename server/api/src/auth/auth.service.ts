@@ -14,13 +14,18 @@ import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class AuthService {
+    private readonly accessTokenExpiresIn: string;
+    private readonly refreshTokenExpiresIn: string;
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
         private readonly configService: ConfigService,
         private httpService: HttpService,
         private jwtService: JwtService
-    ) { }
+    ) {
+        this.accessTokenExpiresIn = this.configService.get<string>('ACCESS_TOKEN_EXPIRES_IN') || '1d';
+        this.refreshTokenExpiresIn = this.configService.get<string>('REFRESH_TOKEN_EXPIRES_IN') || '7d';
+    }
 
     async kakaoLogin(kakaoAccessToken: string) {
         const kakaoResponse = await firstValueFrom(
@@ -62,8 +67,8 @@ export class AuthService {
                 email: user.email,
                 status: user.status
             };
-            const accessToken = this.jwtService.sign(payload, { expiresIn: '1m' });
-            const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+            const accessToken = this.jwtService.sign(payload, {expiresIn: this.accessTokenExpiresIn});
+            const refreshToken = this.jwtService.sign(payload, {expiresIn: this.refreshTokenExpiresIn});
             user.refresh_token = refreshToken;
             await this.userRepository.update(user.id, { refresh_token: refreshToken });
             const dto: ResponseOauthLoginDto = ResponseOauthLoginDto.fromEntity(user, accessToken, refreshToken)
@@ -84,8 +89,8 @@ export class AuthService {
             email: newUser.email,
             status: newUser.status
         };
-        const accessToken = this.jwtService.sign(payload, { expiresIn: '1m' });
-        const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+        const accessToken = this.jwtService.sign(payload, {expiresIn: this.accessTokenExpiresIn});
+        const refreshToken = this.jwtService.sign(payload, {expiresIn: this.refreshTokenExpiresIn});
         newUser.refresh_token = refreshToken;
         await this.userRepository.update(newUser.id, { refresh_token: refreshToken });
         const dto: ResponseOauthLoginDto = ResponseOauthLoginDto.fromEntity(newUser, accessToken, refreshToken)
@@ -93,10 +98,10 @@ export class AuthService {
     }
 
     async refreshToken(refreshToken: string) {
-        let payload: any;
+        let refreshTokenPayload: any;
         //토큰이 만료되었는지 검증합니다.
         try {
-            payload = this.jwtService.verify(refreshToken);
+            refreshTokenPayload = this.jwtService.verify(refreshToken);
         } catch (error) {
             if (error.name === 'TokenExpiredError') {
                 throwUnauthorizedException('Refresh Token이 만료되었습니다.', 'REFRESH_TOKEN_EXPIRED');
@@ -107,7 +112,7 @@ export class AuthService {
             throwUnauthorizedException('Refresh Token 검증에 실패했습니다.', 'REFRESH_TOKEN_VERIFY_FAILED');
         }
 
-        const user = await this.userRepository.findOneBy({ id: payload.sub });
+        const user = await this.userRepository.findOneBy({ id: refreshTokenPayload.sub });
         if (!user) {
             throwUnauthorizedException('유저를 찾을 수 없습니다.', 'USER_NOT_FOUND');
             return;
@@ -116,8 +121,12 @@ export class AuthService {
             throwUnauthorizedException('Refresh Token이 위조되었거나 잘못되었습니다.', 'REFRESH_TOKEN_INVALID');
             return;
         }
-        const newAccessToken = this.jwtService.sign({ sub: user.id, email: user.email, status: user.status }, { expiresIn: '1m' });
+        const newPayload = {
+            sub: user.id,
+            email: user.email,
+            status: user.status
+        };
+        const newAccessToken = this.jwtService.sign(newPayload, { expiresIn: this.accessTokenExpiresIn });
         return { accessToken: newAccessToken };
     }
-
 }
