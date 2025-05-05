@@ -1,7 +1,6 @@
-import { UploadSoundRequestDto } from './upload-sound.request.dto';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class UploadSoundRequestDto {
+export class UploadSoundResponseDto {
   @ApiProperty({ example: true })
   success: boolean;
 

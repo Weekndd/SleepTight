@@ -1,4 +1,4 @@
-import { IsNumber, IsISO8601, IsBase64, IsUUID } from 'class-validator';
+import { IsNumber, IsISO8601, IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UploadSoundRequestDto {
@@ -23,11 +23,4 @@ export class UploadSoundRequestDto {
   @ApiProperty({ example: 10, description: '녹음 길이(초)' })
   @IsNumber()
   duration: number;
-
-  @ApiProperty({
-    example: 'SGVsbG8=',
-    description: 'base64 인코딩된 오디오 데이터',
-  })
-  @IsBase64()
-  base64Data: string;
 }
