@@ -1,7 +1,6 @@
 import { User } from "src/users/entities/user.entity";
 
-export class ResponseLoginDto {
-    accessToken: string;
+export class ResponseUserInfoDto {
     //유저 정보
     id: number;
     provider: string;
@@ -14,14 +13,15 @@ export class ResponseLoginDto {
     weight: number
     height: number
     gender: string
+    birthDate: Date
+    country: string
     lengthUnit: string
     weightUnit: string
     status: string
 
 
-    static fromEntity(user: User, accessToken: string): ResponseLoginDto {
-        const dto: ResponseLoginDto = new ResponseLoginDto();
-        dto.accessToken = accessToken;
+    static fromEntity(user: User): ResponseUserInfoDto {
+        const dto: ResponseUserInfoDto = new ResponseUserInfoDto();
         dto.id = user.id;
         dto.provider = user.provider??'';
         dto.lastName = user.last_name??'';
@@ -33,6 +33,8 @@ export class ResponseLoginDto {
         dto.weight = user.weight??0;
         dto.height = user.height??0;
         dto.gender = user.gender??'';
+        dto.birthDate = user.birth_date??new Date();
+        dto.country = user.nationality??'';
         dto.lengthUnit = user.length_unit??'' 
         dto.weightUnit = user.weight_unit??''
         dto.status = user.status??'';
