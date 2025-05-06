@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/config/router.dart';
-import 'core/config/theme.dart';
+import 'core/config/theme/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +17,7 @@ class SleepTightApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'Sleep Tight',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
+      theme: AppTheme.theme,
       routerConfig: appRouter,
     );
   }
