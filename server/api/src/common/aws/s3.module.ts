@@ -1,11 +1,16 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { S3Provider } from './s3.provider';
-S3Provider;
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { s3ClientFactory } from './s3.provider';
 
 @Module({
   imports: [ConfigModule],
-  providers: [...S3Provider],
-  exports: [...S3Provider],
+  providers: [
+    {
+      provide: 'S3_CLIENT',
+      useFactory: s3ClientFactory,
+      inject: [ConfigService],
+    },
+  ],
+  exports: ['S3_CLIENT'],
 })
 export class S3Module {}
