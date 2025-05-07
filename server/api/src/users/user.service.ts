@@ -5,7 +5,7 @@ import { Repository } from "typeorm";
 import { ResponseUserInfoDto } from "./dto/response-user-info.dto";
 import { throwNotFoundException } from "src/common/exceptions/error.helper";
 import { RequestRegisterUserInfoDto } from "./dto/request-register-user-info.dto";
-import { ResponseRegisterUserInfoDto } from "./dto/response-register-user-info.dto";
+import { ResponseUserInfoWithTokensDto } from "./dto/response-user-info-with-tokens.dto";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { UserStatus } from "./user-status.enum";
@@ -187,9 +187,9 @@ export class UserService {
         const refreshToken = this.jwtService.sign(payload, {expiresIn: this.refreshTokenExpiresIn});
         user.refresh_token = refreshToken;
         const updatedUser = await this.userRepository.save(user);
-        const responseRegisterUserInfoDto = ResponseRegisterUserInfoDto.fromEntity(updatedUser, accessToken, refreshToken);
+        const responseUserInfoWithTokensDto = ResponseUserInfoWithTokensDto.fromEntity(updatedUser, accessToken, refreshToken);
 
-        return responseRegisterUserInfoDto;
+        return responseUserInfoWithTokensDto;
     }
 
 
@@ -218,5 +218,25 @@ export class UserService {
             status : UserStatus.PENDING_WITHDRAW,
             withdrawal_at : new Date()
         });
+    }
+
+    // 탈퇴 보류 회원 복구
+    async reinstate(userId :number) {
+        const user = await this.findById(userId);
+        //새롭게 JWT 토큰 발급
+        const payload = {
+            sub: user.id,
+            email: user.email,
+            status: user.status
+        };
+        const accessToken = this.jwtService.sign(payload, {expiresIn: this.accessTokenExpiresIn});
+        const refreshToken = this.jwtService.sign(payload, {expiresIn: this.refreshTokenExpiresIn});
+        this.userRepository.update(userId,{
+            status : UserStatus.ACTIVE,
+            refresh_token : refreshToken,
+            withdrawal_at : null
+        });
+        const responseUserInfoWithTokensDto = ResponseUserInfoWithTokensDto.fromEntity(user, accessToken, refreshToken);
+        return responseUserInfoWithTokensDto;
     }
 }

@@ -1,11 +1,10 @@
 // src/user/user.controller.ts
 import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request, HttpCode } from '@nestjs/common';
-import { User } from './entities/user.entity';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ResponseUserInfoDto } from './dto/response-user-info.dto';
-import { request } from 'http';
 import { RequestRegisterUserInfoDto } from './dto/request-register-user-info.dto';
+import { ResponseUserInfoWithTokensDto } from './dto/response-user-info-with-tokens.dto';
 
 
 @Controller('user')
@@ -120,20 +119,18 @@ export class UserController {
     return this.userService.updateWakeTime(userId, wakeTime);
   }
 
-  //초기 사용자 정보 등록
+  // 초기 사용자 정보 등록
   @UseGuards(JwtAuthGuard)
   @Post('/register')
   async registerUserInfo(
     @Request() req,
     @Body() RequestRegisterUserInfoDto: RequestRegisterUserInfoDto,
-  ): Promise<ResponseUserInfoDto> {
+  ) :Promise<ResponseUserInfoDto> {
     const userId = req.user.userId; // JWT에서 userId를 가져옴
-    console.log('userId', userId);
-    console.log('RequestRegisterUserInfoDto', RequestRegisterUserInfoDto);
     return this.userService.registerUserInfo(userId, RequestRegisterUserInfoDto);
   }
 
-  //로그아웃
+  // 로그아웃
   @UseGuards(JwtAuthGuard)
   @Get('logout')
   async logout(@Request() req) {
@@ -141,11 +138,19 @@ export class UserController {
     this.userService.logout(userId);
   }
 
-  //회원탈퇴
+  // 회원 탈퇴
   @UseGuards(JwtAuthGuard)
   @Patch('withdraw')
   async withdraw(@Request() req) {
     const userId :number = req.user.userId;
     this.userService.withdraw(userId);
+  }
+
+  // 회원 복구
+  @UseGuards(JwtAuthGuard)
+  @Patch('reinstate')
+  async reinstate(@Request() req) :Promise<ResponseUserInfoWithTokensDto> {
+    const userId :number = req.user.userId;
+    return this.userService.reinstate(userId);
   }
 }
