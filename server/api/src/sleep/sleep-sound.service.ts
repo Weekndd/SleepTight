@@ -1,11 +1,16 @@
 import { ConfigService } from '@nestjs/config';
 import { SleepSoundFactory } from './sleep-sound.factory';
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { UploadSleepSoundRequestDto } from './dto/upload-sleep-sound.request.dto';
 import { UploadSleepSoundResponseDto } from './dto/upload-sleep-sound.response.dto';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { VoiceType } from './entities/voice-type.enum';
 import { SleepSoundProducer } from './sleep-sound.producer';
+import { throwBadRequest } from 'src/common/exceptions/error.helper';
 
 @Injectable()
 export class SleepSoundService {
@@ -23,8 +28,14 @@ export class SleepSoundService {
   ): Promise<UploadSleepSoundResponseDto> {
     const { segmentId, reportId, duration, timestamp } = body;
 
-    const key = `audio-prod/${segmentId}.opus`;
+    const exists = await this.sleepSoundFactory.exist({
+      where: { segmentId },
+    });
+    if (exists) {
+      throwBadRequest('이미 존재하는 segmentId입니다.', 'DUPLICATE_SEGMENT_ID');
+    }
 
+    const key = `audio-prod/${segmentId}.opus`;
     const bucket = this.configService.get<string>('AWS_S3_BUCKET')!;
     const region = this.configService.get<string>('AWS_S3_REGION')!;
 
@@ -46,7 +57,6 @@ export class SleepSoundService {
       segmentId,
       fileUrl,
       duration,
-      voiceType: VoiceType.BREATH,
     });
     await this.sleepSoundFactory.save(sleepSound);
 

@@ -17,20 +17,24 @@ export class SleepSoundFactory {
     segmentId: string;
     fileUrl: string;
     duration: number;
-    voiceType: VoiceType;
   }): SleepSound {
-    const { reportId, segmentId, fileUrl, duration, voiceType } = params;
+    const { reportId, segmentId, fileUrl, duration } = params;
 
     return this.sleepSoundRepo.create({
       sleepReportId: reportId,
       segmentId,
       voiceUrl: fileUrl,
-      voiceType,
       duration,
     });
   }
 
   save(entity: SleepSound): Promise<SleepSound> {
     return this.sleepSoundRepo.save(entity);
+  }
+
+  // 중복 확인
+  async exist(options: { where: { segmentId: string } }): Promise<boolean> {
+    const count = await this.sleepSoundRepo.count(options);
+    return count > 0;
   }
 }
