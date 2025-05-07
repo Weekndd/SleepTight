@@ -1,17 +1,19 @@
 import 'package:app/core/config/theme/color.dart';
+import 'package:app/features/sleep_mode/presentation/provider/alarm_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class TimeSlotPicker extends StatefulWidget {
-  const TimeSlotPicker({Key? key}) : super(key: key);
+class TimeSlotPicker extends ConsumerStatefulWidget {
+  const TimeSlotPicker({super.key});
 
   @override
-  _TimeSlotPickerState createState() => _TimeSlotPickerState();
+  ConsumerState<TimeSlotPicker> createState() => _TimeSlotPickerState();
 }
 
-class _TimeSlotPickerState extends State<TimeSlotPicker> {
-  String _amPm = '오전';
-  int _hour = 7;
-  int _minute = 0;
+class _TimeSlotPickerState extends ConsumerState<TimeSlotPicker> {
+  late String _amPm;
+  late int _hour;
+  late int _minute;
 
   final List<String> _amPmOptions = ['오전', '오후'];
   final List<int> _hours = List.generate(12, (index) => index + 1);
@@ -24,21 +26,7 @@ class _TimeSlotPickerState extends State<TimeSlotPicker> {
   final FixedExtentScrollController _amPmController =
       FixedExtentScrollController();
 
-  String get formattedTime {
-    final hourStr = _hour.toString().padLeft(2, '0');
-    final minuteStr = _minute.toString().padLeft(2, '0');
-    return '$_amPm $hourStr:$minuteStr';
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _hourController.jumpToItem(_hour - 1);
-      _minuteController.jumpToItem(_minute);
-      _amPmController.jumpToItem(_amPm == '오전' ? 0 : 1);
-    });
-  }
+  bool _initialized = false;
 
   @override
   void dispose() {
@@ -48,80 +36,118 @@ class _TimeSlotPickerState extends State<TimeSlotPicker> {
     super.dispose();
   }
 
+  void _updateAlarm() {
+    final alarm = ref
+        .read(alarmTimeProvider)
+        .maybeWhen(data: (value) => value, orElse: () => null);
+
+    if (alarm == null) return;
+
+    final updated = alarm.copyWith(amPm: _amPm, hour: _hour, minute: _minute);
+
+    ref.read(updateAlarmTimeProvider(updated).future);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: Align(
-            alignment: Alignment.center,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 320,
-                minHeight: 60,
-                maxHeight: 60,
-              ),
-              child: SizedBox.expand(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Color.fromRGBO(58, 110, 255, 0.16),
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
+    final alarmAsync = ref.watch(alarmTimeProvider);
+
+    return alarmAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (err, _) => const SizedBox.shrink(),
+      data: (alarm) {
+        if (!_initialized) {
+          _amPm = alarm.amPm;
+          _hour = alarm.hour;
+          _minute = alarm.minute;
+          _initialized = true;
+
+          // 스크롤 초기 위치 세팅
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _amPmController.jumpToItem(_amPm == '오전' ? 0 : 1);
+            _hourController.jumpToItem(_hour - 1);
+            _minuteController.jumpToItem(_minute);
+          });
+        }
+
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.center,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: 320,
+                    minHeight: 60,
+                    maxHeight: 60,
+                  ),
+                  child: SizedBox.expand(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: const Color.fromRGBO(58, 110, 255, 0.16),
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(8),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ),
-
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TimeSlot(
-              options: _amPmOptions,
-              controller: _amPmController,
-              onChanged: (value) {
-                setState(() {
-                  _amPm = value;
-                });
-              },
-              highlightIndex: _amPm == '오전' ? 0 : 1,
-              fontSize: 24,
-            ),
-            TimeSlot(
-              options: _hours,
-              controller: _hourController,
-              onChanged: (value) {
-                setState(() {
-                  _hour = value;
-                });
-              },
-              highlightIndex: _hour - 1,
-              textFormatter: (val) => val.toString().padLeft(2, '0'),
-            ),
-            const SizedBox(width: 4),
-            const Text(
-              ":",
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: AppColors.white,
-              ),
-            ),
-            const SizedBox(width: 4),
-            TimeSlot(
-              options: _minutes,
-              controller: _minuteController,
-              onChanged: (value) {
-                setState(() {
-                  _minute = value;
-                });
-              },
-              highlightIndex: _minute,
-              textFormatter: (val) => val.toString().padLeft(2, '0'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TimeSlot(
+                  options: _amPmOptions,
+                  controller: _amPmController,
+                  onChanged: (value) {
+                    setState(() {
+                      _amPm = value;
+                    });
+                    _updateAlarm();
+                  },
+                  highlightIndex: _amPm == '오전' ? 0 : 1,
+                  fontSize: 24,
+                ),
+                TimeSlot(
+                  options: _hours,
+                  controller: _hourController,
+                  onChanged: (value) {
+                    setState(() {
+                      _hour = value;
+                    });
+                    _updateAlarm();
+                  },
+                  highlightIndex: _hour - 1,
+                  textFormatter: (val) => val.toString().padLeft(2, '0'),
+                ),
+                const SizedBox(width: 4),
+                const Text(
+                  ":",
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.white,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                TimeSlot(
+                  options: _minutes,
+                  controller: _minuteController,
+                  onChanged: (value) {
+                    setState(() {
+                      _minute = value;
+                    });
+                    _updateAlarm();
+                  },
+                  highlightIndex: _minute,
+                  textFormatter: (val) => val.toString().padLeft(2, '0'),
+                ),
+              ],
             ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 }
