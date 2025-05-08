@@ -1,3 +1,4 @@
+import { ExceptionCode } from 'src/common/exceptions/exception-code.enum';
 import { ConfigService } from '@nestjs/config';
 import { SleepSoundFactory } from './sleep-sound.factory';
 import {
@@ -10,7 +11,7 @@ import { UploadSleepSoundRequestDto } from './dto/upload-sleep-sound.request.dto
 import { UploadSleepSoundResponseDto } from './dto/upload-sleep-sound.response.dto';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { SleepSoundProducer } from './sleep-sound.producer';
-import { throwBadRequest } from 'src/common/exceptions/error.helper';
+import { throwBadRequest } from 'src/common/exceptions/exception.helper';
 
 @Injectable()
 export class SleepSoundService {
@@ -32,7 +33,7 @@ export class SleepSoundService {
       where: { segmentId },
     });
     if (exists) {
-      throwBadRequest('이미 존재하는 segmentId입니다.', 'DUPLICATE_SEGMENT_ID');
+      throwBadRequest(ExceptionCode.DUPLICATE_SEGMENT_ID);
     }
 
     const key = `audio-prod/${segmentId}.opus`;
