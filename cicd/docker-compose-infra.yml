@@ -11,6 +11,8 @@ services:
       - POSTGRES_USER=${DB_USERNAME}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_DATABASE}
+    ports:
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -22,6 +24,8 @@ services:
     restart: always
     env_file:
       - ./.env
+    ports:
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -34,7 +38,8 @@ services:
     env_file:
       - ./.env
     ports:
-      - "15672:15672"       # 관리 UI (선택)
+      - "127.0.0.1:5672:5672"    # AMQP
+      - "127.0.0.1:15672:15672"  # Management UI
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -42,7 +47,7 @@ services:
 
 networks:
   app-network:
-    driver: bridge
+    external: true
 
 volumes:
   postgres_data:

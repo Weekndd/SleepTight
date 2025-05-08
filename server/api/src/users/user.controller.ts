@@ -1,18 +1,20 @@
 // src/user/user.controller.ts
 import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request, HttpCode } from '@nestjs/common';
-import { User } from './entities/user.entity';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ResponseUserInfoDto } from './dto/response-user-info.dto';
-import { request } from 'http';
 import { RequestRegisterUserInfoDto } from './dto/request-register-user-info.dto';
+import { ResponseUserInfoWithTokensDto } from './dto/response-user-info-with-tokens.dto';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-
+@ApiTags('USERS')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
   // 사용자 정보 조회
+  @ApiOperation({ summary: '유저 정보 조회' })
+  @ApiBearerAuth() // JWT 인증 필요
   @UseGuards(JwtAuthGuard)
   @Get()
   async getUserInfo(@Request() req): Promise<ResponseUserInfoDto> {
@@ -21,6 +23,8 @@ export class UserController {
   }
 
   // 사용자 이름 변경
+  @ApiOperation({ summary: '유저 이름 변경' })
+  @ApiBearerAuth() // JWT 인증 필요
   @UseGuards(JwtAuthGuard)
   @Patch('name')
   async updateName(
@@ -33,6 +37,8 @@ export class UserController {
   }
 
   // 사용자 생년월일 변경
+  @ApiOperation({ summary: '유저 생년월일 변경' })
+  @ApiBearerAuth() // JWT 인증 필요
   @UseGuards(JwtAuthGuard)
   @Patch('birthDate')
   async updateBirthDate(
@@ -44,6 +50,8 @@ export class UserController {
   }
 
   // 사용자 성별 변경
+  @ApiOperation({ summary: '유저 성별 변경' })
+  @ApiBearerAuth() // JWT 인증 필요
   @UseGuards(JwtAuthGuard)
   @Patch('gender')
   async updateGender(
@@ -55,6 +63,8 @@ export class UserController {
   }
 
   // 사용자 국적 변경
+  @ApiOperation({ summary: '유저 국적 변경' })
+  @ApiBearerAuth() // JWT 인증 필요
   @UseGuards(JwtAuthGuard)
   @Patch('country')
   async updateCountry(
@@ -66,6 +76,8 @@ export class UserController {
   }
 
   // 사용자 키 변경
+  @ApiOperation({ summary: '유저저 키 변경' })
+  @ApiBearerAuth() // JWT 인증 필요
   @UseGuards(JwtAuthGuard)
   @Patch('height')
   async updateHeight(
@@ -77,6 +89,8 @@ export class UserController {
   }
 
   // 사용자 몸무게 변경
+  @ApiOperation({ summary: '유저 몸무게 변경' })
+  @ApiBearerAuth() // JWT 인증 필요
   @UseGuards(JwtAuthGuard)
   @Patch('weight')
   async updateWeight(
@@ -88,6 +102,8 @@ export class UserController {
   }
 
   // 사용자 목표 수면 시간 변경
+  @ApiOperation({ summary: '유저 목표 수면시간 변경' })
+  @ApiBearerAuth() // JWT 인증 필요
   @UseGuards(JwtAuthGuard)
   @Patch('min-sleep-duration')
   async updateMinSleepDuration(
@@ -99,6 +115,8 @@ export class UserController {
   }
   
   // 사용자 취침 시간 변경
+  @ApiOperation({ summary: '유저 취침시간 변경' })
+  @ApiBearerAuth() // JWT 인증 필요
   @UseGuards(JwtAuthGuard)
   @Patch('sleep-time')
   async updateSleepTime(
@@ -110,6 +128,8 @@ export class UserController {
   }
 
   // 사용자 기상 시간 변경
+  @ApiOperation({ summary: '유저 기상시간간 변경' })
+  @ApiBearerAuth() // JWT 인증 필요
   @UseGuards(JwtAuthGuard)
   @Patch('wake-time')
   async updateWakeTime(
@@ -120,15 +140,46 @@ export class UserController {
     return this.userService.updateWakeTime(userId, wakeTime);
   }
 
+  // 초기 사용자 정보 등록
+  @ApiOperation({ summary: '유저 초기 정보 등록' })
+  @ApiBearerAuth() // JWT 인증 필요
   @UseGuards(JwtAuthGuard)
-  @Post()
+  @Post('/register')
   async registerUserInfo(
     @Request() req,
     @Body() RequestRegisterUserInfoDto: RequestRegisterUserInfoDto,
-  ): Promise<ResponseUserInfoDto> {
-    const userId = req.user.userId // JWT에서 userId를 가져옴
-    console.log('userId', userId);
-    console.log('RequestRegisterUserInfoDto', RequestRegisterUserInfoDto);
+  ) :Promise<ResponseUserInfoDto> {
+    const userId = req.user.userId; // JWT에서 userId를 가져옴
     return this.userService.registerUserInfo(userId, RequestRegisterUserInfoDto);
+  }
+
+  // 로그아웃
+  @ApiOperation({ summary: '로그아웃' })
+  @ApiBearerAuth() // JWT 인증 필요
+  @UseGuards(JwtAuthGuard)
+  @Get('logout')
+  async logout(@Request() req) {
+    const userId :number = req.user.userId;
+    this.userService.logout(userId);
+  }
+
+  // 회원 탈퇴
+  @ApiOperation({ summary: '회원 탈퇴' })
+  @ApiBearerAuth() // JWT 인증 필요
+  @UseGuards(JwtAuthGuard)
+  @Patch('withdraw')
+  async withdraw(@Request() req) {
+    const userId :number = req.user.userId;
+    this.userService.withdraw(userId);
+  }
+
+  // 회원 복구
+  @ApiOperation({ summary: '탈퇴 회원 복구' })
+  @ApiBearerAuth() // JWT 인증 필요
+  @UseGuards(JwtAuthGuard)
+  @Patch('reinstate')
+  async reinstate(@Request() req) :Promise<ResponseUserInfoWithTokensDto> {
+    const userId :number = req.user.userId;
+    return this.userService.reinstate(userId);
   }
 }
