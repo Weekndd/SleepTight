@@ -21,7 +21,7 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [uri],
-      exchange: 'sleep.exchange',
+      exchange: configService.get<string>('RMQ_RECV_EXCHANGE'),
       // exchange: configService.get<string>('RMQ_RECV_EXCHANGE'),
       queue: configService.get<string>('RMQ_RECV_QUEUE'),
       queueOptions: { durable: false },
