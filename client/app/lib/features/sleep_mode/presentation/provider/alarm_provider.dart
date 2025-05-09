@@ -1,4 +1,3 @@
-import 'package:app/core/service/alarm_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -50,7 +49,7 @@ class AlarmTime {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class AlarmTimeNotifier extends _$AlarmTimeNotifier {
   @override
   FutureOr<AlarmTime> build() async {
@@ -62,21 +61,38 @@ class AlarmTimeNotifier extends _$AlarmTimeNotifier {
     final updated = current.copyWith(isAlarmOn: !current.isAlarmOn);
     await updated.saveToPreferences();
     state = AsyncValue.data(updated);
-
-    if (updated.isAlarmOn) {
-      await AlarmService.schedule(updated);
-    } else {
-      await AlarmService.cancel();
-    }
   }
 
   Future<void> updateTime(AlarmTime newTime) async {
-    await newTime.saveToPreferences();
-    state = AsyncValue.data(newTime);
+    // 분 값이 제대로 바뀌었는지 확인하기
+    final current = await future;
+    final updated = current.copyWith(
+      hour: newTime.hour,
+      minute: newTime.minute,
+      amPm: newTime.amPm,
+    );
 
-    final updated = newTime;
-    if (updated.isAlarmOn) {
-      await AlarmService.schedule(updated);
-    }
+    await updated.saveToPreferences();
+    state = AsyncValue.data(updated);
+  }
+
+  Future<void> snoozeAlarm() async {
+    final current = await future;
+
+    final now = DateTime.now();
+    final snoozeTime = now.add(const Duration(minutes: 5));
+
+    final int hour24 = snoozeTime.hour;
+    final String amPm = hour24 >= 12 ? '오후' : '오전';
+    final int hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+
+    final updated = current.copyWith(
+      hour: hour12,
+      minute: snoozeTime.minute,
+      amPm: amPm,
+    );
+
+    await updated.saveToPreferences();
+    state = AsyncValue.data(updated);
   }
 }

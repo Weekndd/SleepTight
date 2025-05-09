@@ -6,7 +6,7 @@ part of 'alarm_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$alarmTimeNotifierHash() => r'7aacbc4bb71b780720b21cac89f58f0e00aba8ec';
+String _$alarmTimeNotifierHash() => r'ad9ee6bfcfb037ccc94e95ec7aa35f6cb9661b92';
 
 /// See also [AlarmTimeNotifier].
 @ProviderFor(AlarmTimeNotifier)

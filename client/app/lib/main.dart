@@ -17,11 +17,6 @@ void main() async {
   // Todo: 로컬라이제이션 추가
   await initializeDateFormatting('ko_KR', null);
 
-  await requestExactAlarmPermission();
-  print('rerender');
-
-  await AlarmService.init();
-
   runApp(const ProviderScope(child: SleepTightApp()));
 }
 
