@@ -8,10 +8,12 @@ import { SleepSoundFactory } from './sleep-sound.factory';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SleepSoundProducer } from './sleep-sound.producer';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { SleepEvent } from './entities/sleep-event.entity';
+import { SleepAnalysisResultListener } from './sleep-analysis-result.listener';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([SleepSound]),
+    TypeOrmModule.forFeature([SleepSound, SleepEvent]),
     S3Module,
     ConfigModule,
     ClientsModule.registerAsync([
@@ -25,7 +27,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
             urls: [
               `amqp://${config.get('RABBITMQ_DEFAULT_USER')}:${config.get('RABBITMQ_DEFAULT_PASS')}@${config.get('RABBITMQ_HOST')}:${config.get('RABBITMQ_PORT')}`,
             ],
-            queue: 'sleep.metadata.queue',
+            queue: `${config.get('RMQ_SEND_QUEUE')}`,
             queueOptions: { durable: false },
           },
         }),
@@ -33,6 +35,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     ]),
   ],
   controllers: [SleepSoundController],
-  providers: [SleepSoundProducer, SleepSoundService, SleepSoundFactory],
+  providers: [SleepSoundProducer, SleepSoundService, SleepSoundFactory, SleepAnalysisResultListener],
 })
 export class SleepSoundModule {}

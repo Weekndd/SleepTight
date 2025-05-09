@@ -16,17 +16,19 @@ async function bootstrap() {
   const queue = configService.get('RABBITMQ_QUEUE');
 
   // 수신 처리 시 주석 해제
-  // // MQ 마이크로서비스 연결
-  // app.connectMicroservice<MicroserviceOptions>({
-  //   transport: Transport.RMQ,
-  //   options: {
-  //     urls: [uri],
-  //     queue: 'sleep.analysis.queue',
-  //     queueOptions: { durable: false },
-  //   },
-  // });
-
-  // await app.startAllMicroservices();
+  // MQ 마이크로서비스 연결
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [uri],
+      exchange: 'sleep.exchange',
+      // exchange: configService.get<string>('RMQ_RECV_EXCHANGE'),
+      queue: configService.get<string>('RMQ_RECV_QUEUE'),
+      queueOptions: { durable: false },
+      noAck: false
+    },
+  });
+  await app.startAllMicroservices();
 
   app.useGlobalPipes(new ValidationPipe());
 
