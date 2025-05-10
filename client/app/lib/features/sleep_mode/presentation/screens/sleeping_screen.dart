@@ -1,0 +1,141 @@
+import 'dart:async';
+
+import 'package:app/core/config/theme/color.dart';
+import 'package:app/features/sleep_mode/presentation/widgets/alarm_time_display.dart';
+import 'package:app/shared/widgets/alarm_trigger_watcher.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+
+class SleepingScreen extends ConsumerStatefulWidget {
+  const SleepingScreen({super.key});
+
+  @override
+  ConsumerState<SleepingScreen> createState() => _SleepingScreenState();
+}
+
+class _SleepingScreenState extends ConsumerState<SleepingScreen> {
+  late DateTime _now;
+  late Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _now = DateTime.now();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      setState(() {
+        _now = DateTime.now();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String formattedDate = DateFormat(
+      'MM월 dd일 EEEE',
+      'ko_KR',
+    ).format(_now);
+    final String formattedTime = DateFormat('a hh:mm', 'ko_KR').format(_now);
+
+    return AlarmTriggerWatcher(
+      child: Scaffold(
+        body: Padding(
+          padding: const EdgeInsets.only(top: 84, bottom: 114),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                formattedDate,
+                style: const TextStyle(fontSize: 16, color: AppColors.font2),
+              ),
+
+              SizedBox(height: 45),
+
+              Text(
+                formattedTime,
+                style: const TextStyle(
+                  fontSize: 32,
+                  color: AppColors.primaryHv2,
+                ),
+              ),
+
+              SizedBox(height: 10),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    '알람',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: AppColors.font2,
+                    ),
+                  ),
+
+                  SizedBox(width: 10),
+
+                  AlarmTimeDisplay(),
+                ],
+              ),
+
+              SizedBox(height: 14),
+
+              Container(
+                decoration: BoxDecoration(gradient: AppColors.linearGradient3),
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    top: 104,
+                    bottom: 104,
+                    left: 20,
+                    right: 20,
+                  ),
+                  child: Center(
+                    // Todo: 파형 그래프 수정
+                    child: Image.asset(
+                      'assets/images/sound_wave.png',
+                      width: double.infinity,
+                      fit: BoxFit.fitWidth,
+                    ),
+                  ),
+                ),
+              ),
+
+              SizedBox(height: 34),
+
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 156),
+                child: SizedBox(
+                  height: 48,
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.bgRegular,
+                      foregroundColor: AppColors.primaryHv,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    onPressed: () {
+                      // Todo: 수면 종료
+                      context.go('/wake_up');
+                    },
+                    child: const Text('수면 종료', style: TextStyle(fontSize: 16)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

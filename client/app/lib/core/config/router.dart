@@ -1,7 +1,74 @@
+import 'package:app/features/sleep_mode/presentation/screens/home_screen.dart';
+import 'package:app/features/sleep_mode/presentation/screens/ringing_screen.dart';
+import 'package:app/features/sleep_mode/presentation/screens/sleeping_screen.dart';
+import 'package:app/features/sleep_mode/presentation/screens/wake_up_screen.dart';
+import 'package:app/shared/widgets/shell_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../features/user/presentation/screens/user_screen.dart';
 
 // Todo: 라우팅 설정
 final appRouter = GoRouter(
-  routes: [GoRoute(path: '/', builder: (context, state) => const UserScreen())],
+  initialLocation: '/',
+  routes: [
+    GoRoute(
+      path: '/',
+      pageBuilder:
+          (BuildContext context, GoRouterState state) =>
+              const NoTransitionPage(child: ShellScreen(body: HomeScreen())),
+    ),
+    GoRoute(
+      path: '/sleeping',
+      pageBuilder:
+          (BuildContext context, GoRouterState state) => const NoTransitionPage(
+            child: ShellScreen(hasBottomNav: false, body: SleepingScreen()),
+          ),
+    ),
+    GoRoute(
+      path: '/ringing',
+      pageBuilder:
+          (BuildContext context, GoRouterState state) => const NoTransitionPage(
+            child: ShellScreen(
+              hasPlayer: false,
+              hasBottomNav: false,
+              body: RingingScreen(),
+            ),
+          ),
+    ),
+    GoRoute(
+      path: '/wake_up',
+      pageBuilder:
+          (BuildContext context, GoRouterState state) => const NoTransitionPage(
+            child: ShellScreen(
+              hasPlayer: false,
+              hasBottomNav: false,
+              body: WakeUpScreen(),
+            ),
+          ),
+    ),
+
+    GoRoute(
+      path: '/analysis',
+      pageBuilder:
+          (BuildContext context, GoRouterState state) =>
+              const NoTransitionPage(child: ShellScreen(body: HomeScreen())),
+    ),
+    GoRoute(
+      path: '/coach',
+      pageBuilder:
+          (BuildContext context, GoRouterState state) =>
+              const NoTransitionPage(child: ShellScreen(body: HomeScreen())),
+    ),
+    GoRoute(
+      path: '/sound',
+      pageBuilder:
+          (BuildContext context, GoRouterState state) =>
+              const NoTransitionPage(child: ShellScreen(body: HomeScreen())),
+    ),
+    GoRoute(
+      path: '/mypage',
+      pageBuilder:
+          (BuildContext context, GoRouterState state) =>
+              const NoTransitionPage(child: ShellScreen(body: HomeScreen())),
+    ),
+  ],
 );
