@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SleepDiary } from './entities/sleep-diary.entity';
@@ -15,61 +19,76 @@ export class SleepDiariesService {
     private readonly reportRepo: Repository<SleepReport>,
   ) {}
 
-  /** 지정일자에 이미 일지가 있으면 중복 에러 */
-  private async ensureNotExists(reportId: number, date: string) {
+  /** 해당 리포트에 이미 일지가 있으면 중복 에러 */
+  private async ensureNotExists(reportId: number) {
     const exist = await this.diaryRepo.findOne({
-      where: { sleepReportId: reportId, sleepDate: date },
+      where: { sleepReportId: reportId },
     });
     if (exist) {
-      throw new ConflictException(`Diary for ${date} already exists`);
+      throw new ConflictException(
+        `Diary for report ${reportId} already exists`,
+      );
     }
-  }
-
-  /** 오늘 또는 지정일자의 sleep_report 를 가져옴 */
-  private async findReport(userId: number, date: string): Promise<SleepReport> {
-    const report = await this.reportRepo.findOne({
-      where: { userId, sleepDate: date },
-    });
-    if (!report) {
-      throw new NotFoundException(`No SleepReport for date ${date}`);
-    }
-    return report;
   }
 
   /** 일지 생성 */
   async create(userId: number, dto: CreateSleepDiaryDto): Promise<SleepDiary> {
-    const report = await this.findReport(userId, dto.sleepDate);
-    await this.ensureNotExists(report.id, dto.sleepDate);
-
-    const diary = this.diaryRepo.create({
-      sleepReportId: report.id,
-      ...dto,
+    // 1) 클라이언트가 넘겨준 reportId로 소유 여부 확인
+    const report = await this.reportRepo.findOne({
+      where: { id: dto.sleepReportId, userId },
     });
+    if (!report) {
+      throw new NotFoundException(`SleepReport ${dto.sleepReportId} not found`);
+    }
+
+    // 2) 날짜 중복 체크
+    await this.ensureNotExists(dto.sleepReportId);
+
+    // 3) 일지 생성
+    const { sleepReportId, ...rest } = dto;
+    const diary = this.diaryRepo.create({ sleepReportId, ...rest });
     return this.diaryRepo.save(diary);
   }
 
-  /** 날짜별 일지 조회 */
-  async findByDate(userId: number, date: string): Promise<SleepDiary> {
-    const report = await this.findReport(userId, date);
+  /** 리포트 ID로 일지 조회 */
+  async findByReportId(userId: number, reportId: number): Promise<SleepDiary> {
+    const report = await this.reportRepo.findOne({
+      where: { id: reportId, userId },
+    });
+    if (!report) {
+      throw new NotFoundException(`No SleepReport for reportId ${reportId}`);
+    }
+
     const diary = await this.diaryRepo.findOne({
-      where: { sleepReportId: report.id, sleepDate: date },
+      where: { sleepReportId: reportId },
     });
     if (!diary) {
-      throw new NotFoundException(`Diary not found for date ${date}`);
+      throw new NotFoundException(`Diary not found for reportId ${reportId}`);
     }
     return diary;
   }
 
-  /** 날짜별 일지 수정 */
-  async update(userId: number, dto: UpdateSleepDiaryDto & { sleepDate: string }): Promise<SleepDiary> {
-    const report = await this.findReport(userId, dto.sleepDate);
-    const diary = await this.diaryRepo.findOne({
-      where: { sleepReportId: report.id, sleepDate: dto.sleepDate },
+  /** 일지 수정 */
+  async update(userId: number, dto: UpdateSleepDiaryDto): Promise<SleepDiary> {
+    // 1) report 확인
+    const report = await this.reportRepo.findOne({
+      where: { id: dto.sleepReportId, userId },
     });
-    if (!diary) {
-      throw new NotFoundException(`Diary not found for date ${dto.sleepDate}`);
+    if (!report) {
+      throw new NotFoundException(`No SleepReport for id ${dto.sleepReportId}`);
     }
 
+    // 2) 일지 존재 확인
+    const diary = await this.diaryRepo.findOne({
+      where: { sleepReportId: dto.sleepReportId },
+    });
+    if (!diary) {
+      throw new NotFoundException(
+        `Diary not found for reportId ${dto.sleepReportId}`,
+      );
+    }
+
+    // 3) 수정할 필드 덮어쓰기
     Object.assign(diary, dto);
     return this.diaryRepo.save(diary);
   }

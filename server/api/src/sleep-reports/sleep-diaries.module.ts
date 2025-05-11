@@ -6,9 +6,7 @@ import { SleepDiariesService } from './sleep-diaries.service';
 import { SleepDiariesController } from './sleep-diaries.controller';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([SleepDiary, SleepReport]),
-  ],
+  imports: [TypeOrmModule.forFeature([SleepDiary, SleepReport])],
   providers: [SleepDiariesService],
   controllers: [SleepDiariesController],
 })
