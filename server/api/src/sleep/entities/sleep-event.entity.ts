@@ -1,5 +1,6 @@
-import { Column, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
+@Entity('sleep_events')
 export class SleepEvent {
     @PrimaryGeneratedColumn()
     id :number;

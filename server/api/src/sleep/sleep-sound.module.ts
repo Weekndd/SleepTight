@@ -34,7 +34,7 @@ import { SleepAnalysisResultListener } from './sleep-analysis-result.listener';
       },
     ]),
   ],
-  controllers: [SleepSoundController],
-  providers: [SleepSoundProducer, SleepSoundService, SleepSoundFactory, SleepAnalysisResultListener],
+  controllers: [SleepSoundController, SleepAnalysisResultListener],
+  providers: [SleepSoundProducer, SleepSoundService, SleepSoundFactory],
 })
 export class SleepSoundModule {}
