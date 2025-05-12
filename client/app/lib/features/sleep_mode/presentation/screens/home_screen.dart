@@ -1,3 +1,4 @@
+import 'package:app/core/config/app_config.dart';
 import 'package:app/core/config/theme/color.dart';
 import 'package:app/features/sleep_mode/presentation/widgets/alarm_toggle_row.dart';
 import 'package:app/features/sleep_mode/presentation/widgets/time_slot_picker.dart';
@@ -9,7 +10,6 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Todo: 알람 조회 및 설정 로직 추가
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -62,7 +62,7 @@ class HomeScreen extends StatelessWidget {
               ),
               onPressed: () {
                 // Todo: 수면 시작
-                context.go('/sleeping');
+                context.go(AppConfig.routes.homeSleeping);
               },
               child: const Text('수면 시작', style: TextStyle(fontSize: 16)),
             ),

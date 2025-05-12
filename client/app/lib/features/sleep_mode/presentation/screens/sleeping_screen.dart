@@ -1,11 +1,12 @@
 import 'dart:async';
 
 import 'package:app/core/config/theme/color.dart';
+import 'package:app/core/utils/overlay.dart';
+import 'package:app/features/sleep_mode/presentation/screens/wake_up_screen.dart';
 import 'package:app/features/sleep_mode/presentation/widgets/alarm_time_display.dart';
 import 'package:app/shared/widgets/alarm_trigger_watcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class SleepingScreen extends ConsumerStatefulWidget {
@@ -126,7 +127,7 @@ class _SleepingScreenState extends ConsumerState<SleepingScreen> {
                     ),
                     onPressed: () {
                       // Todo: 수면 종료
-                      context.go('/wake_up');
+                      showOverlay(context: context, child: WakeUpScreen());
                     },
                     child: const Text('수면 종료', style: TextStyle(fontSize: 16)),
                   ),
