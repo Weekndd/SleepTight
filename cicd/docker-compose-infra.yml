@@ -56,3 +56,5 @@ volumes:
   postgres_data:
   redis_data:
   rabbitmq_data:
+    external:
+      name: sleep-tight-app_rabbitmq_data
