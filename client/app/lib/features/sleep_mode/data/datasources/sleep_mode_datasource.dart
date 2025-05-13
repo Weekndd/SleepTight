@@ -31,11 +31,21 @@ class SleepModeDatasource {
   }
 
   Future<SleepSoundResponse> postSleepSound(SleepSoundRequest request) async {
-    final response = await dio.post(
-      AppConfig.api.sleep.sound,
-      data: request.toJson(),
-    );
+    try {
+      // FormData로 변환
+      final formData = await request.toFormData();
 
-    return SleepSoundResponse.fromJson(response.data['data']);
+      // 서버에 POST 요청 전송
+      final response = await dio.post(
+        AppConfig.api.sleep.sound,
+        data: formData,
+      );
+
+      // 서버 응답 처리
+      return SleepSoundResponse.fromJson(response.data);
+    } catch (e) {
+      // 오류 처리
+      throw Exception('Failed to send sound: $e');
+    }
   }
 }

@@ -1,5 +1,5 @@
 class SleepStartRequest {
-  final String sleepStartTime; // "00:00" 형식
+  final String sleepStartTime;
 
   SleepStartRequest({required this.sleepStartTime});
 

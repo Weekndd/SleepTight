@@ -2,7 +2,7 @@ import 'package:app/features/sleep_mode/data/models/enums/sleep_stage.dart';
 
 class SleepStage {
   final SleepStageType stageType;
-  final String startTime; // ISO8601
+  final String startTime;
   final String endTime;
 
   SleepStage({
@@ -22,7 +22,7 @@ class SleepStage {
 
 class SleepEndRequest {
   final int reportId;
-  final String sleepEndTime; // "00:00" 형식
+  final String sleepEndTime;
   final List<SleepStage> stages;
 
   SleepEndRequest({
