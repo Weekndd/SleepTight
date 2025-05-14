@@ -2,13 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './users/user.module';
-import { SleepSoundModule } from './sleep/sleep-sound.module';
 import { AuthModule } from './auth/auth.module';
 import { Music } from './music/music.entity';
 import { MusicModule } from './music/music.module';
 import { HealthModule } from './health/health.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TaskModule } from './task/task.module';
+import { SleepSoundModule } from './sleep-sound/sleep-sound.module';
+import { SleepReportModule } from './sleep-reports/sleep-report.module';
 import { SleepDiariesModule } from './sleep-reports/sleep-diaries.module';
 
 @Module({
@@ -34,6 +35,7 @@ import { SleepDiariesModule } from './sleep-reports/sleep-diaries.module';
       }),
     }),
     UserModule,
+    SleepReportModule,
     SleepDiariesModule,
     SleepSoundModule,
     AuthModule,
