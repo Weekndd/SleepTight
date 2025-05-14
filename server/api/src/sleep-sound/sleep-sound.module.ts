@@ -8,12 +8,13 @@ import { SleepSoundFactory } from './sleep-sound.factory';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SleepSoundProducer } from './sleep-sound.producer';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { SleepStageService } from './sleep-stage.service';
-import { SleepStageFactory } from './sleep-stage.factory';
+import { SleepStageService } from '../sleep-reports/sleep-stage.service';
+import { SleepStageFactory } from '../sleep-reports/sleep-stage.factory';
+import { SleepStageLog } from '../sleep-reports/entities/sleep-stage-log.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([SleepSound]),
+    TypeOrmModule.forFeature([SleepSound, SleepStageLog]),
     S3Module,
     ConfigModule,
     ClientsModule.registerAsync([
@@ -36,13 +37,7 @@ import { SleepStageFactory } from './sleep-stage.factory';
     ]),
   ],
   controllers: [SleepSoundController],
-  providers: [
-    SleepSoundProducer,
-    SleepSoundService,
-    SleepSoundFactory,
-    SleepStageService,
-    SleepStageFactory,
-  ],
-  exports: [SleepStageService],
+  providers: [SleepSoundProducer, SleepSoundService, SleepSoundFactory],
+  exports: [SleepSoundService],
 })
 export class SleepSoundModule {}
