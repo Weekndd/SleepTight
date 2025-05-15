@@ -19,7 +19,6 @@ class SleepModeViewModel extends StateNotifier<SleepModeState> {
     state = state.copyWith(startSleep: const AsyncValue.loading());
     try {
       final response = await _repository.postSleepStart(request);
-      print(response);
       state = state.copyWith(startSleep: AsyncValue.data(response));
 
       _ref.read(reportIdNotifierProvider.notifier).set(response.reportId);
@@ -35,9 +34,8 @@ class SleepModeViewModel extends StateNotifier<SleepModeState> {
     state = state.copyWith(endSleep: const AsyncValue.loading());
     try {
       final response = await _repository.postSleepEnd(request);
-      print(response);
       state = state.copyWith(endSleep: AsyncValue.data(response));
-      return true;
+      return response.isValidReport;
     } catch (e, st) {
       state = state.copyWith(endSleep: AsyncValue.error(e, st));
       return false;
@@ -48,7 +46,6 @@ class SleepModeViewModel extends StateNotifier<SleepModeState> {
     state = state.copyWith(sound: const AsyncValue.loading());
     try {
       final response = await _repository.postSleepSound(request);
-      print(response);
       state = state.copyWith(sound: AsyncValue.data(response));
     } catch (e, st) {
       state = state.copyWith(sound: AsyncValue.error(e, st));

@@ -18,7 +18,7 @@ class SleepModeDatasource {
       data: request.toJson(),
     );
 
-    return SleepStartResponse.fromJson(response.data['data']);
+    return SleepStartResponse.fromJson(response.data);
   }
 
   Future<SleepEndResponse> postSleepEnd(SleepEndRequest request) async {
@@ -27,7 +27,7 @@ class SleepModeDatasource {
       data: request.toJson(),
     );
 
-    return SleepEndResponse.fromJson(response.data['data']);
+    return SleepEndResponse.fromJson(response.data);
   }
 
   Future<SleepSoundResponse> postSleepSound(SleepSoundRequest request) async {

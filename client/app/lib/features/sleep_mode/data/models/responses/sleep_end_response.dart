@@ -1,8 +1,10 @@
 class SleepEndResponse {
-  SleepEndResponse();
+  final bool isValidReport;
+
+  SleepEndResponse({required this.isValidReport});
 
   factory SleepEndResponse.fromJson(Map<String, dynamic> json) {
-    // Todo: 에러 처리
-    return SleepEndResponse();
+    final isValid = json['data']?['isValidReport'] == true;
+    return SleepEndResponse(isValidReport: isValid);
   }
 }
