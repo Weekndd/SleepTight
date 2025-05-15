@@ -60,7 +60,7 @@ pipeline {
       steps {
         sh '''
           # 1) AI 서비스 빌드(필요 시 의존성 설치)
-          cd server/ai
+          cd server/ai/app
           # pip install -r requirements.txt  # uncomment 필요 시
 
           # 2) Docker 이미지 태깅 및 푸시
