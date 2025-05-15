@@ -51,6 +51,8 @@ export class SleepReportService {
     if (existing) {
       existing.sleepStartTime = sleepStartTime;
       existing.isValidReport = true;
+      existing.targetStartTime = user.sleep_time;
+      existing.targetEndTime = user.wake_time;
       return (await this.reportRepo.save(existing)).id;
     }
 
@@ -60,6 +62,9 @@ export class SleepReportService {
       sleepStartTime,
       sleepDateOnly,
     );
+    newReport.targetStartTime = user.sleep_time;
+    newReport.targetEndTime = user.wake_time;
+    newReport.totalSleepTime = user.min_sleep_duration;
 
     // 저장 후 리포트 ID 반환
     const saved = await this.reportFactory.save(newReport);
@@ -68,7 +73,7 @@ export class SleepReportService {
 
   // 수면 종료 + 수면 단계 업로드
   async endSleep(dto: UploadSleepStagesDto): Promise<void> {
-    const report = await this.reportRepo.findOneByOrFail({ id: dto.reportId });
+    const report = await this.reportRepo.findOneBy({ id: dto.reportId });
     if (!report) {
       throwNotFoundException(ExceptionCode.REPORT_NOT_FOUND);
     }
@@ -77,15 +82,16 @@ export class SleepReportService {
       const sleepEndTime = new Date(dto.sleepEndTime);
       report.sleepEndTime = sleepEndTime;
 
-      const durationMs =
+      const sleepDurationMs =
         sleepEndTime.getTime() - report.sleepStartTime.getTime();
-      const isValidSleep = durationMs >= 60 * 60 * 1000;
+      const isValidSleep = sleepDurationMs >= 60 * 60 * 1000; // 1시간 이상이면 유효 수면
       report.isValidReport = isValidSleep;
 
       if (isValidSleep) {
-        report.sleepDate = new Date(sleepEndTime.toDateString());
-
+        report.totalSleepTime = `${Math.floor(sleepDurationMs / 1000)} seconds`;
         await this.sleepStageService.saveStages(dto.stages, report.id, manager);
+      } else {
+        report.totalSleepTime = null;
       }
       await manager.save(report);
     });

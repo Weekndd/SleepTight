@@ -33,7 +33,7 @@ export class SleepReport {
   targetEndTime: string;
 
   @Column({ name: 'total_sleep_time', type: 'interval', nullable: true })
-  totalSleepTime: string;
+  totalSleepTime: string | null;
 
   @Column({ name: 'total_awake_time', type: 'interval', nullable: true })
   totalAwakeTime: string;
