@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str
     PINECONE_API_KEY: str
     PINECONE_ENVIRONMENT: str
-    PINECIONE_INDEX_NAME: str
+    PINECONE_INDEX_NAME: str
     MODEL_NAME: str = "gpt-4o"
     EMBEDDING_MODEL: str = "text-embedding-3-large"
     TOP_K: int = 2
