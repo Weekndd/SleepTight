@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { SleepReport } from './entities/sleep-report.entity';
 import { SleepStageService } from 'src/sleep-reports/sleep-stage.service';
-import { UploadSleepStagesDto } from 'src/sleep-reports/dto/upload-sleep-stage.request.dto';
+import { EndSleepRequestDto } from 'src/sleep-reports/dto/end-sleep.request.dto';
 import { StartSleepRequestDto } from './dto/start-sleep.request.dto';
 import { User } from 'src/users/entities/user.entity';
 import { throwNotFoundException } from 'src/common/exceptions/exception.helper';
@@ -31,13 +31,22 @@ export class SleepReportService {
       throwNotFoundException(ExceptionCode.USER_NOT_FOUND);
     }
 
-    // 목표 기상 시간으로 기준 일자 판단
-    const wakeHour = parseInt(user.wake_time.split(':')[0], 10);
+    // 목표 기상 시간 기준 sleepDate 계산 (UTC)
+    const [wakeHourStr] = user.wake_time.split(':');
+    const wakeHour = parseInt(wakeHourStr, 10);
+
     const sleepDate = new Date(sleepStartTime);
-    if (sleepStartTime.getHours() < wakeHour) {
-      sleepDate.setDate(sleepDate.getDate() - 1);
+    if (sleepStartTime.getUTCHours() < wakeHour) {
+      sleepDate.setUTCDate(sleepDate.getDate() - 1);
     }
-    const sleepDateOnly = new Date(sleepDate.toDateString());
+
+    const sleepDateOnly = new Date(
+      Date.UTC(
+        sleepDate.getUTCFullYear(),
+        sleepDate.getUTCMonth(),
+        sleepDate.getUTCDate(),
+      ),
+    );
 
     // 기존 유효하지 않은 리포트가 있다면 재사용
     const existing = await this.reportRepo.findOne({
@@ -50,6 +59,7 @@ export class SleepReportService {
 
     if (existing) {
       existing.sleepStartTime = sleepStartTime;
+      existing.sleepDate = sleepDateOnly;
       existing.isValidReport = true;
       existing.targetStartTime = user.sleep_time;
       existing.targetEndTime = user.wake_time;
@@ -62,6 +72,7 @@ export class SleepReportService {
       sleepStartTime,
       sleepDateOnly,
     );
+    newReport.sleepDate = sleepDateOnly;
     newReport.targetStartTime = user.sleep_time;
     newReport.targetEndTime = user.wake_time;
     newReport.totalSleepTime = user.min_sleep_duration;
@@ -72,12 +83,13 @@ export class SleepReportService {
   }
 
   // 수면 종료 + 수면 단계 업로드
-  async endSleep(dto: UploadSleepStagesDto): Promise<void> {
+  async endSleep(dto: EndSleepRequestDto): Promise<boolean> {
     const report = await this.reportRepo.findOneBy({ id: dto.reportId });
     if (!report) {
       throwNotFoundException(ExceptionCode.REPORT_NOT_FOUND);
     }
-    await this.dataSource.transaction(async (manager) => {
+
+    const result = await this.dataSource.transaction(async (manager) => {
       // 종료 시간 계산
       const sleepEndTime = new Date(dto.sleepEndTime);
       report.sleepEndTime = sleepEndTime;
@@ -94,6 +106,9 @@ export class SleepReportService {
         report.totalSleepTime = null;
       }
       await manager.save(report);
+      return isValidSleep;
     });
+
+    return result;
   }
 }
