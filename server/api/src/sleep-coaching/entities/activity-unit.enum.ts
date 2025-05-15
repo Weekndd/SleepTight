@@ -13,5 +13,10 @@ export enum ActivityUnit {
   MINUTES = 'MINUTES',
   KILOGRAMS = 'KILOGRAMS',
   LITER = 'LITER',
+  SECOND = 'SECOND',
+  STEP = 'STEP',
+  GRAMS = 'GRAMS',
+  MINUTE = 'MINUTE',
+  SCORE = 'SCORE',
   NO_UNIT = 'NO_UNIT',
 }

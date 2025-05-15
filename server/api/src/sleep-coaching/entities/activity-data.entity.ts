@@ -15,7 +15,7 @@ export class ActivityData {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({name: 'user_id'})
   userId: number;
 
   @Column({
@@ -25,6 +25,7 @@ export class ActivityData {
   uuid: string;
 
   @Column({
+    name: 'data_type',
     type: 'enum',
     enum: ActivityDataType,
   })
@@ -32,6 +33,7 @@ export class ActivityData {
 
   // 수치 데이터
   @Column({
+    name: 'value_number',
     type: 'float',
     nullable: true,
   })
@@ -39,6 +41,7 @@ export class ActivityData {
 
   // 복합 데이터
   @Column({
+    name: 'value_json',
     type: 'jsonb',
     nullable: true,
   })
@@ -51,12 +54,18 @@ export class ActivityData {
   })
   unit: ActivityUnit;
 
-  @Column({ type: 'timestamptz' })
+  @Column({ 
+    name: 'activity_start_time', 
+    type: 'timestamptz' })
   activityStartTime: Date;
 
-  @Column({ type: 'timestamptz' })
+  @Column({ 
+    name: 'activity_end_time',
+    type: 'timestamptz' })
   activityEndTime: Date;
 
-  @CreateDateColumn()
+  @CreateDateColumn({
+    name: 'created_at',
+  })
   createdAt: Date;
 }

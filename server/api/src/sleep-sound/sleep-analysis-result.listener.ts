@@ -22,9 +22,9 @@ export class SleepAnalysisResultListener {
         const events = data.events;
         const segmentId = data.segmentId;
         const inferenceTs = data.inferenceTs;
-
         let preLable: string = '';
         let preId: number = 0;
+
         for(const item of events) {
             const dto: AnalysisResultDto = plainToInstance(AnalysisResultDto, item); //Payload는 POJO이기 때문에 자동으로 변환이 되지 않음.
             dto.segmentId = segmentId;
@@ -51,7 +51,6 @@ export class SleepAnalysisResultListener {
                 console.error('Error processing analysis result:', e);
             }
         }
-
 
     }
 }
