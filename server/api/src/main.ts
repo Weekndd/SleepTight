@@ -2,12 +2,34 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { setupSwagger } from './common/config/swagger';
 import { setupGlobalPrefix } from './common/config/prefix';
-
+import { ValidationPipe } from '@nestjs/common';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { ConfigService } from '@nestjs/config';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const configService = app.get(ConfigService);
+
+  const uri = `amqp://${configService.get('RABBITMQ_DEFAULT_USER')}:${configService.get('RABBITMQ_DEFAULT_PASS')}@${configService.get('RABBITMQ_HOST')}:${configService.get('RABBITMQ_PORT')}`;
+  const queue = configService.get('RABBITMQ_QUEUE');
+
+  // MQ 마이크로서비스 연결
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,  
+    options: {
+      urls: [uri],
+      exchange: configService.get<string>('RMQ_RECV_EXCHANGE'),
+      routingKey: configService.get<string>('RMQ_RECV_ROUTING_KEY'),
+      queue: configService.get<string>('RMQ_RECV_QUEUE'),
+      queueOptions: { durable: false},
+      noAck: true,
+    },
+  });
+  await app.startAllMicroservices();
+
+  app.useGlobalPipes(new ValidationPipe());
 
   setupSwagger(app);
   setupGlobalPrefix(app);
@@ -20,7 +42,7 @@ async function bootstrap() {
       // forbidNonWhitelisted: true, // ✅ 정의되지 않은 속성 있으면 에러 발생
     }),
   );
-  app.useGlobalInterceptors(new ResponseInterceptor()); 
+  app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalFilters(new HttpExceptionFilter());
 
   await app.listen(process.env.PORT ?? 3000);
