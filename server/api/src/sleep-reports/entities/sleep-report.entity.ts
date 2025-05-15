@@ -65,11 +65,11 @@ export class SleepReport {
   somniloquyDurationMinutes: string;
 
   @Column({
-    name: 'cough_duration_minutes',
+    name: 'coughing_duration_minutes',
     type: 'interval',
     nullable: true,
   })
-  scoughDurationMinutes: string;
+  coughingDurationMinutes: string;
 
   @Column({ name: 'sleep_date', type: 'date' })
   sleepDate: Date;

@@ -36,7 +36,7 @@ export class SleepSound {
   @Column({ name: 'duration', type: 'float' })
   duration: number;
 
-  @Column({ type: 'uuid' })
+  @Column({ name: 'segment_id', type: 'uuid' })
   @Index({ unique: true })
   segmentId: string;
 }

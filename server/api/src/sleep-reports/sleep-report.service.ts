@@ -1,3 +1,4 @@
+import { SleepSoundService } from './../sleep-sound/sleep-sound.service';
 import { SleepReportFactory } from './sleep-report.factory';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,7 +10,6 @@ import { StartSleepRequestDto } from './dto/start-sleep.request.dto';
 import { User } from 'src/users/entities/user.entity';
 import { throwNotFoundException } from 'src/common/exceptions/exception.helper';
 import { ExceptionCode } from 'src/common/exceptions/exception-code.enum';
-import { SleepStageLog } from './entities/sleep-stage-log.entity';
 
 @Injectable()
 export class SleepReportService {
@@ -21,6 +21,7 @@ export class SleepReportService {
     private readonly userRepo: Repository<User>,
     private readonly sleepStageService: SleepStageService,
     private readonly reportFactory: SleepReportFactory,
+    private readonly sleepSoundService: SleepSoundService,
   ) {}
 
   // 수면 시작
@@ -133,6 +134,13 @@ export class SleepReportService {
 
         await this.sleepStageService.saveStages(dto.stages, report.id, manager);
         await this.setStageDurations(report, manager);
+
+        const { snoring, somniloquy, coughing } =
+          await this.sleepSoundService.calculateEventDurations(report.id);
+
+        report.snoringDurationMinutes = `${Math.floor(snoring / 60)} minutes`;
+        report.somniloquyDurationMinutes = `${Math.floor(somniloquy / 60)} minutes`;
+        report.coughingDurationMinutes = `${Math.floor(coughing / 60)} minutes`;
       } else {
         report.totalSleepTime = null;
       }

@@ -32,4 +32,12 @@ export class SleepSoundController {
   ): Promise<UploadSleepSoundResponseDto> {
     return this.sleepSoundService.handleUpload(file, body);
   }
+
+  // dev.controller.ts
+  @Post('dev/test-calculate-events')
+  async testCalculate(@Body('reportId') reportId: number) {
+    const durations =
+      await this.sleepSoundService.calculateEventDurations(reportId);
+    return durations;
+  }
 }

@@ -1,9 +1,10 @@
 // sleep-sound.factory.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { SleepSound } from './entities/sleep-sound.entity';
 import { SleepEvent } from './entities/sleep-event.entity';
+import { report } from 'process';
 
 @Injectable()
 export class SleepSoundFactory {
@@ -42,5 +43,19 @@ export class SleepSoundFactory {
 
   async saveSleepEvent(sleepEvent: SleepEvent) {
     return this.sleepEventRepo.save(sleepEvent);
+  }
+
+  // reportId로 sleepSound 목록 가져오기
+  async findByReportId(reportId: number): Promise<SleepSound[]> {
+    return this.sleepSoundRepo.find({
+      where: { sleepReport: { id: reportId } },
+    });
+  }
+
+  // segmentId 목록으로 이벤트들 가져오기
+  async findEventsBySegmentIds(segmentIds: string[]): Promise<SleepEvent[]> {
+    return this.sleepEventRepo.find({
+      where: { segmentId: In(segmentIds) },
+    });
   }
 }
