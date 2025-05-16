@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SleepStageLog } from './entities/sleep-stage-log.entity';
-import { Repository, EntityManager } from 'typeorm';
+import { Repository, EntityManager, In } from 'typeorm';
 import { SleepStageDto } from './dto/end-sleep.request.dto';
 import { SleepStageFactory } from './sleep-stage.factory';
 import { SleepStageType } from './entities/sleep-stage-type.enum';
@@ -14,6 +14,7 @@ export class SleepStageService {
     private readonly factory: SleepStageFactory,
   ) {}
 
+  // 수면단계 저장
   async saveStages(
     stages: SleepStageDto[],
     reportId: number,
@@ -82,12 +83,20 @@ export class SleepStageService {
     return { awake, light, deep, rem, awakenCount };
   }
 
+  // 자는데 걸리는 시간 계산
   async getFirstSleepStageStartTime(
     reportId: number,
     manager: EntityManager,
   ): Promise<Date | null> {
     const firstStage = await manager.findOne(SleepStageLog, {
-      where: { sleepReportId: reportId },
+      where: {
+        sleepReportId: reportId,
+        stageType: In([
+          SleepStageType.LIGHT,
+          SleepStageType.DEEP,
+          SleepStageType.REM,
+        ]),
+      },
       order: { stageStartTime: 'ASC' },
     });
     return firstStage?.stageStartTime ?? null;
