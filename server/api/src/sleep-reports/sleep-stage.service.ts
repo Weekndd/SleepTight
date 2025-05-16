@@ -26,14 +26,6 @@ export class SleepStageService {
     await manager.save(stageEntities);
   }
 
-  // private parseTime(timeStr: string, baseDate: Date): Date {
-  //   const [hour, minute] = timeStr.split(':').map(Number);
-  //   const result = new Date(baseDate);
-  //   result.setHours(hour, minute, 0, 0);
-  //   if (result < baseDate) result.setDate(result.getDate() + 1);
-  //   return result;
-  // }
-
   // 수면 단계별 총 시간 계산
   async calculateStageDurations(
     reportId: number,
@@ -88,5 +80,16 @@ export class SleepStageService {
       })),
     );
     return { awake, light, deep, rem, awakenCount };
+  }
+
+  async getFirstSleepStageStartTime(
+    reportId: number,
+    manager: EntityManager,
+  ): Promise<Date | null> {
+    const firstStage = await manager.findOne(SleepStageLog, {
+      where: { sleepReportId: reportId },
+      order: { stageStartTime: 'ASC' },
+    });
+    return firstStage?.stageStartTime ?? null;
   }
 }
