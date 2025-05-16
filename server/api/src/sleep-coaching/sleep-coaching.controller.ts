@@ -1,17 +1,24 @@
-import { Controller, Get, Request, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Request, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
-import { SleepReportService } from "src/sleep-reports/sleep-report.service";
+import { SleepCoachingService } from "./sleep-coaching.service";
 
 @Controller("sleep-coaching")
-export class SleepCoachingService {
+export class SleepCoachingController {
   constructor(
-    private readonly sleepReportService: SleepReportService,
+    private readonly sleepCoachingService: SleepCoachingService,
   ) {}
 
+  
+  @Get("test")
+  async test() {
+    return "test";
+  }
+
+  
   @Get()
   @UseGuards(JwtAuthGuard)
-  async getSleepCoaching(@Request() req, date: Date) {
+  async getSleepCoaching(@Request() req, @Body() date: Date) {
     const userId: number = req.user.userId; // JWT에서 userId를 가져옴
-    // return this.sleepReportService.getSleepCoaching(userId, date);
+    this.sleepCoachingService.getSleepCoaching(userId, date);
   }
 }

@@ -13,7 +13,7 @@ export class SleepCoachingService {
 
     async getSleepCoaching(userId: number, date :Date): Promise<any> {
         // userId와 date를 사용하여 ActivityData를 조회합니다.
-        const activityData = await this.activityDataRepository.findOne({
+        const activityData = await this.activityDataRepository.find({
             where: {
                 userId: userId,
                 createdAt: date,
@@ -24,6 +24,8 @@ export class SleepCoachingService {
             throwNotFoundException(ExceptionCode.ACTIVITY_DATA_NOT_FOUND);
         }
         //TODO: fastAPI서버에 요청을 보내는 로직을 추가합니다.
-        
+        console.log('activityData:', activityData);
+
+
     }
 }
