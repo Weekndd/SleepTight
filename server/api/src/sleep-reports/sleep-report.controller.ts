@@ -1,3 +1,4 @@
+import { SleepSoundService } from './../sleep-sound/sleep-sound.service';
 import {
   Body,
   Controller,
@@ -20,6 +21,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { StartSleepResponseDto } from './dto/start-sleep.response.dto';
 import { EndSleepResponseDto } from './dto/end-sleep.response.dto';
 import { SleepReportResponseDto } from './dto/sleep-report.response.dto';
+import { SleepSoundAnalysisResponseDto } from './dto/sleep-sound-analysis.response.dto';
 
 @ApiTags('Sleep Report')
 @Controller('sleep-report')
@@ -65,5 +67,14 @@ export class SleepReportController {
       date,
     );
     return reportList;
+  }
+
+  @Get('events/:reportId')
+  @ApiOperation({ summary: '수면 리포트 분석 결과 조회' })
+  @ApiOkResponse({ type: SleepSoundAnalysisResponseDto })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async getSleepSoundEvents(@Param('reportId') reportId: number) {
+    return this.sleepReportService.getSleepEventsByReportId(reportId);
   }
 }

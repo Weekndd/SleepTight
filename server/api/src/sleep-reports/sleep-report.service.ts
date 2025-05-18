@@ -222,4 +222,9 @@ export class SleepReportService {
 
     return result;
   }
+
+  // 리포트 ID로 수면 이벤트 조회
+  async getSleepEventsByReportId(reportId: number) {
+    return this.sleepSoundService.getSleepEventsByReportId(reportId);
+  }
 }

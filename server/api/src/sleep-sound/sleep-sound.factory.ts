@@ -62,4 +62,8 @@ export class SleepSoundFactory {
       where: { segmentId: In(segmentIds) },
     });
   }
+
+  getManager(): EntityManager {
+    return this.sleepSoundRepo.manager;
+  }
 }
