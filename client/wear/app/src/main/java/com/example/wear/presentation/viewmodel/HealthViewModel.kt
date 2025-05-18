@@ -21,13 +21,13 @@ class HealthViewModel(application: Application) : AndroidViewModel(application) 
     // 초기화
     init {
         // 데이터 리스너 등록
-        wearableRepository.registerListeners()
+        wearableRepository.initialize()
         
         // 앱 시작 시 헬스 데이터 요청
         refreshHealthData()
     }
     
-    // 화면이 다시 표시될 때 데이터 갱신
+    // 데이터 갱신
     fun refreshHealthData() {
         viewModelScope.launch {
             wearableRepository.requestHealthData()
@@ -38,10 +38,7 @@ class HealthViewModel(application: Application) : AndroidViewModel(application) 
     fun updateWaterIntake(amount: Int) {
         viewModelScope.launch {
             wearableRepository.updateWaterIntake(amount)
-            
-            // 약간의 딜레이 후 데이터 새로고침
-            kotlinx.coroutines.delay(500)
-            refreshHealthData()
+            // 응답은 MessageClient.OnMessageReceivedListener를 통해 처리됨
         }
     }
     
@@ -49,16 +46,13 @@ class HealthViewModel(application: Application) : AndroidViewModel(application) 
     fun updateCaffeineIntake(amount: Int) {
         viewModelScope.launch {
             wearableRepository.updateCaffeineIntake(amount)
-            
-            // 약간의 딜레이 후 데이터 새로고침
-            kotlinx.coroutines.delay(500)
-            refreshHealthData()
+            // 응답은 MessageClient.OnMessageReceivedListener를 통해 처리됨
         }
     }
     
     // ViewModel 정리
     override fun onCleared() {
         super.onCleared()
-        wearableRepository.unregisterListeners()
+        wearableRepository.destroy()
     }
 } 

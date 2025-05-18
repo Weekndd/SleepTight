@@ -35,8 +35,8 @@ fun MainScreen(viewModel: HealthViewModel) {
 
     // 색상 정의 - 더 선명한 색상으로 조정
     val calorieColor = Color(0xFFFF5B6A)  // 빨간색 (칼로리)
-    val stepColor = Color(0xFF4DB1FF)     // 파란색 (걸음 수)
-    val waterColor = Color(0xFF4AFFB8)    // 연두색 (물)
+    val stepColor = Color(0xFF4AFFB8)     // 연두색 (걸음 수)
+    val waterColor = Color(0xFF4DB1FF)    // 파란색 (물)
     val caffeineColor = Color(0xFFAC8FFF)  // 보라색 (카페인)
 
     // 코루틴 스코프 및 페이저 상태 설정
@@ -45,11 +45,6 @@ fun MainScreen(viewModel: HealthViewModel) {
 
     // 앱 시작 시 데이터 가져오기
     LaunchedEffect(key1 = true) {
-        viewModel.refreshHealthData()
-    }
-
-    // 페이지 변경 시 해당 항목 데이터 업데이트
-    LaunchedEffect(key1 = pagerState.currentPage) {
         viewModel.refreshHealthData()
     }
 
@@ -111,7 +106,7 @@ fun MainScreen(viewModel: HealthViewModel) {
                     progressColor = waterColor,
                     unit = "ml",
                     isEditable = true,
-                    step = 100,  // 100ml 단위로 조절
+                    step = 250,  // 250ml 단위로 조절로 수정
                     onValueChange = { value ->
                         coroutineScope.launch {
                             viewModel.updateWaterIntake(value)
@@ -128,7 +123,7 @@ fun MainScreen(viewModel: HealthViewModel) {
                     progressColor = caffeineColor,
                     unit = "mg",
                     isEditable = true,
-                    step = 50,  // 50mg 단위로 조절
+                    step = 50,  // 50mg 단위로 조절 (기존과 동일)
                     onValueChange = { value ->
                         coroutineScope.launch {
                             viewModel.updateCaffeineIntake(value)
