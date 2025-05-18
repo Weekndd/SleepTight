@@ -24,6 +24,10 @@ export const ExceptionCode = {
     code: 'DUPLICATE_SEGMENT_ID',
     message: '이미 존재하는 세그먼트 아이디입니다.',
   },
+  INVALID_DATE_FORMAT: {
+    code: 'INVALID_DATE_FORMAT',
+    message: '잘못된 날짜 형식입니다.',
+  },
   REPORT_NOT_FOUND: {
     status: 404,
     code: 'REPORT_NOT_FOUND',
