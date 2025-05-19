@@ -1,49 +1,54 @@
-import 'package:app/core/network/dio_provider.dart';
-import 'package:app/core/storage/secure_storage_provider.dart';
-import 'package:app/core/storage/shared_preferences_provider.dart';
-import 'package:app/features/auth/data/datasources/auth_local_data_source.dart';
-import 'package:app/features/auth/data/datasources/auth_remote_data_source.dart';
-import 'package:app/features/auth/data/models/enums/auth_status.dart';
-import 'package:app/features/auth/data/repositories/auth_repository_impl.dart';
-import 'package:app/features/auth/domain/entities/auth_state.dart';
-import 'package:app/features/auth/domain/repositories/auth_repository.dart';
+import 'package:sleep_tight/core/network/dio_provider.dart';
+import 'package:sleep_tight/core/storage/secure_storage_provider.dart';
+import 'package:sleep_tight/features/auth/data/datasources/auth_local_data_source.dart';
+import 'package:sleep_tight/features/auth/data/datasources/auth_remote_data_source.dart';
+import 'package:sleep_tight/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:sleep_tight/features/auth/domain/repositories/auth_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sleep_tight/features/auth/data/models/requests/kakao_login_request.dart';
+import 'package:sleep_tight/features/auth/data/models/responses/kakao_login_response.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final dioClient = ref.watch(dioClientProvider);
   final secureStorage = ref.watch(secureStorageProvider);
-  final prefs = ref.watch(sharedPreferencesProvider);
 
   final remote = AuthRemoteDataSourceImpl(dio: dioClient.dio);
-  final local = AuthLocalDataSourceImpl(
-    secureStorage: secureStorage,
-    prefs: prefs,
-  );
+  final local = AuthLocalDataSourceImpl(secureStorage: secureStorage);
   return AuthRepositoryImpl(remoteDataSource: remote, localDataSource: local);
 });
 
-final authStateProvider = StateNotifierProvider<AuthStateNotifier, AuthState>((
-  ref,
-) {
-  final repo = ref.watch(authRepositoryProvider);
-  return AuthStateNotifier(repo);
-});
+// AuthModel StateNotifierProvider
+final authModelProvider =
+    StateNotifierProvider<AuthModelNotifier, KakaoLoginResponseModel?>((ref) {
+      final repo = ref.watch(authRepositoryProvider);
+      return AuthModelNotifier(ref, repo);
+    });
 
-class AuthStateNotifier extends StateNotifier<AuthState> {
+class AuthModelNotifier extends StateNotifier<KakaoLoginResponseModel?> {
+  final Ref ref;
   final AuthRepository repo;
-  AuthStateNotifier(this.repo) : super(AuthState.initial()) {
-    _init();
+  AuthModelNotifier(this.ref, this.repo) : super(null);
+
+  // 카카오 로그인 처리
+  Future<void> loginWithKakao(KakaoLoginRequestModel request) async {
+    final response = await repo.loginWithKakao(request);
+    await repo.saveTokens(
+      accessToken: response.accessToken,
+      refreshToken: response.refreshToken,
+    );
+    state = response;
   }
 
-  Future<void> _init() async {
-    final statusString = await repo.getStatus();
-    final status = AuthStatus.fromString(statusString);
-    state = AuthState(status: status);
+  // 토큰 리프레시
+  Future<void> refreshAccessToken() async {
+    final response = await repo.refreshAccessToken();
+    await repo.saveAccessToken(response.accessToken);
+    // Optionally update state or notify listeners
   }
 
-  Future<void> refreshAuthStatus() async {
-    final statusString = await repo.getStatus();
-    final status = AuthStatus.fromString(statusString);
-    state = AuthState(status: status);
+  // 로그아웃 및 토큰 삭제
+  Future<void> clear() async {
+    await repo.clearToken();
+    state = null;
   }
 }

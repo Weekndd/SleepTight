@@ -1,41 +1,42 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class AuthLocalDataSource {
   Future<void> saveTokens({
     required String accessToken,
     required String refreshToken,
   });
-  Future<void> saveStatus(String status);
+
+  Future<void> saveAccessToken(String accessToken);
+  Future<void> saveRefreshToken(String refreshToken);
+
   Future<String?> getAccessToken();
   Future<String?> getRefreshToken();
-  Future<String?> getStatus();
   Future<void> clearTokens();
-  Future<void> clearStatus();
 }
 
 class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   final FlutterSecureStorage secureStorage;
-  final SharedPreferences prefs;
 
-  AuthLocalDataSourceImpl({required this.secureStorage, required this.prefs});
+  AuthLocalDataSourceImpl({required this.secureStorage});
 
   static const _accessTokenKey = 'ACCESS_TOKEN';
   static const _refreshTokenKey = 'REFRESH_TOKEN';
-  static const _statusKey = 'AUTH_STATUS';
 
   @override
   Future<void> saveTokens({
     required String accessToken,
     required String refreshToken,
   }) async {
-    await secureStorage.write(key: _accessTokenKey, value: accessToken);
-    await secureStorage.write(key: _refreshTokenKey, value: refreshToken);
+    await saveAccessToken(accessToken);
+    await saveRefreshToken(refreshToken);
   }
 
-  @override
-  Future<void> saveStatus(String status) async {
-    await prefs.setString(_statusKey, status);
+  Future<void> saveAccessToken(String accessToken) async {
+    await secureStorage.write(key: _accessTokenKey, value: accessToken);
+  }
+
+  Future<void> saveRefreshToken(String refreshToken) async {
+    await secureStorage.write(key: _refreshTokenKey, value: refreshToken);
   }
 
   @override
@@ -46,17 +47,8 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       secureStorage.read(key: _refreshTokenKey);
 
   @override
-  Future<String?> getStatus() async => prefs.getString(_statusKey);
-
-  @override
   Future<void> clearTokens() async {
     await secureStorage.delete(key: _accessTokenKey);
     await secureStorage.delete(key: _refreshTokenKey);
-    await prefs.remove(_statusKey);
-  }
-
-  @override
-  Future<void> clearStatus() async {
-    await prefs.remove(_statusKey);
   }
 }

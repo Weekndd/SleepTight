@@ -1,7 +1,10 @@
-import 'package:app/features/auth/domain/repositories/auth_repository.dart';
-import 'package:app/features/auth/data/datasources/auth_remote_data_source.dart';
-import 'package:app/features/auth/data/datasources/auth_local_data_source.dart';
-import 'package:app/features/auth/data/models/requests/kakao_login_request.dart';
+import 'package:sleep_tight/features/auth/data/models/requests/refresh_token_request.dart';
+import 'package:sleep_tight/features/auth/data/models/responses/refresh_token_response.dart';
+import 'package:sleep_tight/features/auth/domain/repositories/auth_repository.dart';
+import 'package:sleep_tight/features/auth/data/datasources/auth_remote_data_source.dart';
+import 'package:sleep_tight/features/auth/data/datasources/auth_local_data_source.dart';
+import 'package:sleep_tight/features/auth/data/models/requests/kakao_login_request.dart';
+import 'package:sleep_tight/features/auth/data/models/responses/kakao_login_response.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
@@ -13,35 +16,53 @@ class AuthRepositoryImpl implements AuthRepository {
   });
 
   @override
-  Future<void> loginWithKakao(String authorizationCode) async {
-    final response = await remoteDataSource.loginWithKakao(
-      KakaoLoginRequestModel(authorizationCode: authorizationCode),
-    );
-    await localDataSource.saveTokens(
+  Future<KakaoLoginResponseModel> loginWithKakao(
+    KakaoLoginRequestModel request,
+  ) async {
+    final response = await remoteDataSource.loginWithKakao(request);
+    await saveTokens(
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
     );
-    await localDataSource.saveStatus(response.status);
+    return response;
   }
 
   @override
-  Future<void> refreshAccessToken() async {
+  Future<RefreshTokenResponseModel> refreshAccessToken() async {
     final refreshToken = await localDataSource.getRefreshToken();
     if (refreshToken == null) throw Exception('No refresh token');
     final newAccessToken = await remoteDataSource.refreshAccessToken(
-      refreshToken,
+      RefreshTokenRequestModel(refreshToken: refreshToken),
     );
-    await localDataSource.saveTokens(
-      accessToken: newAccessToken,
+    await saveTokens(
+      accessToken: newAccessToken.accessToken,
       refreshToken: refreshToken,
     );
+    return RefreshTokenResponseModel(accessToken: newAccessToken.accessToken);
+  }
+
+  // savetoken
+  @override
+  Future<void> saveTokens({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
+    await saveAccessToken(accessToken);
+    await saveRefreshToken(refreshToken);
   }
 
   @override
-  Future<void> logout() async {
+  Future<void> saveAccessToken(String accessToken) async {
+    await localDataSource.saveAccessToken(accessToken);
+  }
+
+  Future<void> saveRefreshToken(String refreshToken) async {
+    await localDataSource.saveRefreshToken(refreshToken);
+  }
+
+  @override
+  Future<void> clearToken() async {
     await localDataSource.clearTokens();
-    await localDataSource.clearStatus();
-    // remoteDataSource logout
   }
 
   @override
@@ -49,12 +70,4 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<String?> getRefreshToken() => localDataSource.getRefreshToken();
-
-  @override
-  Future<String?> getStatus() => localDataSource.getStatus();
-
-  @override
-  Future<void> saveStatus(String status) async {
-    await localDataSource.saveStatus(status);
-  }
 }
