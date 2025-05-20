@@ -1,7 +1,7 @@
 import { ExceptionCode } from 'src/common/exceptions/exception-code.enum';
 import { ConfigService } from '@nestjs/config';
 import { SleepSoundFactory } from './sleep-sound.factory';
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { UploadSleepSoundRequestDto } from './dto/upload-sleep-sound.request.dto';
 import { UploadSleepSoundResponseDto } from './dto/upload-sleep-sound.response.dto';
 import {
@@ -23,6 +23,8 @@ dayjs.extend(utc);
 
 @Injectable()
 export class SleepSoundService {
+  private readonly logger = new Logger(SleepSoundService.name);
+
   constructor(
     @Inject('S3_CLIENT') private readonly s3: S3Client,
     private readonly configService: ConfigService,
@@ -88,6 +90,7 @@ export class SleepSoundService {
 
   async calculateEventDurations(
     reportId: number,
+
     manager: EntityManager,
   ): Promise<{
     snoring: number;
@@ -99,6 +102,8 @@ export class SleepSoundService {
       reportId,
       manager,
     );
+    this.logger.debug(`📌 [calculateEventDurations] reportId: ${reportId}`);
+
     const segmentIds = sounds.map((sound) => sound.segmentId);
     if (!segmentIds.length) return { snoring: 0, somniloquy: 0, coughing: 0 };
 
@@ -156,15 +161,20 @@ export class SleepSoundService {
       reportId,
       this.sleepSoundFactory.getManager(),
     );
+    this.logger.debug('📌 loaded sounds:', sounds);
+
     if (!sounds.length) {
       throwBadRequest(ExceptionCode.SLEEP_SOUND_NOT_FOUND);
     }
 
     const segmentIds = sounds.map((s) => s.segmentId);
+    this.logger.debug('📌 segmentIds:', segmentIds);
+
     const events = await this.sleepSoundFactory.findEventsBySegmentIds(
       segmentIds,
       this.sleepSoundFactory.getManager(),
     );
+    this.logger.debug('📌 loaded events:', events);
 
     const result = await Promise.all(
       sounds.map(async (sound) => {
