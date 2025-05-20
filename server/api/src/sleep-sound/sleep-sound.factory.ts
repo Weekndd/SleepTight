@@ -1,4 +1,3 @@
-// sleep-sound.factory.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, Repository } from 'typeorm';
@@ -24,7 +23,7 @@ export class SleepSoundFactory {
     const { reportId, segmentId, fileUrl, duration, startTime } = params;
 
     return this.sleepSoundRepo.create({
-      sleepReport: { id: reportId },
+      sleepReport: reportId,
       segmentId,
       voiceUrl: fileUrl,
       duration,
@@ -52,7 +51,7 @@ export class SleepSoundFactory {
     manager: EntityManager,
   ): Promise<SleepSound[]> {
     return manager.find(SleepSound, {
-      where: { sleepReport: { id: reportId } },
+      where: { sleepReport: reportId },
     });
   }
 

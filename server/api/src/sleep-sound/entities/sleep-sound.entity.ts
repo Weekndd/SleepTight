@@ -4,7 +4,6 @@ import {
   Entity,
   CreateDateColumn,
   Index,
-  PrimaryColumn,
   ManyToOne,
   JoinColumn,
   PrimaryGeneratedColumn,
@@ -19,7 +18,7 @@ export class SleepSound {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'sleep_report_id' })
-  sleepReport: SleepReport;
+  sleepReport: number;
 
   @Column({ name: 'voice_url', type: 'varchar', length: 255 })
   voiceUrl: string;
