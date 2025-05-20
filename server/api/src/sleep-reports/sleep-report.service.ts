@@ -1,6 +1,11 @@
 import { SleepSoundService } from './../sleep-sound/sleep-sound.service';
 import { SleepReportFactory } from './sleep-report.factory';
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager, Between } from 'typeorm';
 import { SleepReport } from './entities/sleep-report.entity';
@@ -15,6 +20,8 @@ import { SleepDiariesService } from './sleep-diaries.service';
 
 @Injectable()
 export class SleepReportService {
+  private readonly logger = new Logger(SleepReportService.name);
+
   constructor(
     private readonly dataSource: DataSource,
     @InjectRepository(SleepReport)
@@ -62,34 +69,13 @@ export class SleepReportService {
       ),
     );
 
-    // 기존 유효하지 않은 리포트가 있다면 재사용
-    const existing = await this.reportRepo.findOne({
-      where: {
-        userId,
-        isValidReport: false,
-      },
-      order: { createdAt: 'DESC' },
-    });
-
-    if (existing) {
-      existing.sleepStartTime = sleepStartTime;
-      existing.sleepDate = sleepDateOnly;
-      existing.targetStartTime = user.sleep_time;
-      existing.targetEndTime = user.wake_time;
-      return (await this.reportRepo.save(existing)).id;
-    }
-
-    // 없으면 리포트 새로 생성
+    // 리포트 생성
     const newReport = this.reportFactory.createNew(
       userId,
       sleepStartTime,
       sleepDateOnly,
     );
     newReport.isValidReport = false;
-    newReport.sleepDate = sleepDateOnly;
-    newReport.targetStartTime = user.sleep_time;
-    newReport.targetEndTime = user.wake_time;
-    newReport.totalSleepTime = user.min_sleep_duration;
 
     // 저장 후 리포트 ID 반환
     const saved = await this.reportFactory.save(newReport);
@@ -110,7 +96,7 @@ export class SleepReportService {
     report.totalRemSleepTime = `${rem} minutes`;
     report.awakenCount = awakenCount;
 
-    console.log('Stage duration mins:', {
+    this.logger.debug('Stage duration mins:', {
       awake,
       light,
       deep,
@@ -137,7 +123,7 @@ export class SleepReportService {
       report.isValidReport = isValidSleep;
 
       if (isValidSleep) {
-        report.totalSleepTime = `${Math.floor(sleepDurationMs / 60)} minutes`;
+        report.totalSleepTime = `${Math.floor(sleepDurationMs / 1000 / 60)} minutes`;
 
         await this.sleepStageService.saveStages(dto.stages, report.id, manager);
         await this.setStageDurations(report, manager);
@@ -152,11 +138,13 @@ export class SleepReportService {
           const latencyMs =
             firstStageStart.getTime() - report.sleepStartTime.getTime();
           if (latencyMs > 0) {
-            report.sleepLatency = `${Math.floor(latencyMs / 60000)} minutes`;
+            report.sleepLatency = `${Math.floor(latencyMs / 1000 / 60)} minutes`;
           }
         }
 
-        console.log('sleep latency:', { sleepLatency: report.sleepLatency });
+        this.logger.debug('sleep latency:', {
+          sleepLatency: report.sleepLatency,
+        });
 
         const { snoring, somniloquy, coughing } =
           await this.sleepSoundService.calculateEventDurations(
@@ -169,7 +157,8 @@ export class SleepReportService {
       } else {
         report.totalSleepTime = null;
       }
-      console.log('🐛 report before save:', {
+
+      this.logger.debug('🐛 report before save:', {
         snoring: report.snoringDurationSeconds,
         somniloquy: report.somniloquyDurationSeconds,
         coughing: report.coughingDurationSeconds,
