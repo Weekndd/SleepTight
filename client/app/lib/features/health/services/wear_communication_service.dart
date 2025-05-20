@@ -13,7 +13,25 @@ class WearAPI {
   static Future<List<Map<String, dynamic>>> getConnectedNodes() async {
     try {
       final result = await _channel.invokeMethod('getConnectedNodes');
-      return List<Map<String, dynamic>>.from(result ?? []);
+
+      // 명시적인 타입 변환을 통해 오류 해결
+      if (result == null) return [];
+
+      if (result is List) {
+        return result.map((item) {
+          if (item is Map) {
+            return {
+              'id': item['id']?.toString() ?? '',
+              'displayName': item['displayName']?.toString() ?? '',
+              'isNearby': item['isNearby']?.toString() ?? 'false',
+            };
+          }
+          return <String, dynamic>{};
+        }).toList();
+      }
+
+      debugPrint('연결된 노드 응답 형식 오류: $result');
+      return [];
     } catch (e) {
       debugPrint('연결된 노드 가져오기 실패: $e');
       return [];

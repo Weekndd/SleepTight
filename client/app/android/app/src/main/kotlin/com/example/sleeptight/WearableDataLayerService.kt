@@ -2,6 +2,7 @@ package com.example.sleeptight
 
 import android.content.Context
 import android.util.Log
+import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.*
 import io.flutter.plugin.common.MethodChannel
 import org.json.JSONObject
@@ -9,6 +10,7 @@ import kotlinx.coroutines.*
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  * Wear OS Data Layer API와 통신하는 서비스
@@ -35,9 +37,18 @@ class WearableDataLayerService(private val context: Context) : MessageClient.OnM
      * 서비스 초기화 및 리스너 등록
      */
     fun initialize() {
-        Log.d(TAG, "WearableDataLayerService 초기화")
-        Wearable.getMessageClient(context).addListener(this)
-        Wearable.getDataClient(context).addListener(this)
+        Log.d(TAG, "WearableDataLayerService 초기화 시작 - 리스너 등록 전")
+        try {
+            Wearable.getMessageClient(context).addListener(this)
+            Log.d(TAG, "메시지 리스너 등록 완료")
+            
+            Wearable.getDataClient(context).addListener(this)
+            Log.d(TAG, "데이터 리스너 등록 완료")
+            
+            Log.d(TAG, "WearableDataLayerService 초기화 완료")
+        } catch (e: Exception) {
+            Log.e(TAG, "리스너 등록 중 오류 발생", e)
+        }
     }
 
     /**
@@ -57,7 +68,7 @@ class WearableDataLayerService(private val context: Context) : MessageClient.OnM
         scope.launch {
             try {
                 val nodes = withContext(Dispatchers.IO) {
-                    nodeClient.connectedNodes.await()
+                    Tasks.await(nodeClient.connectedNodes)
                 }
                 
                 Log.d(TAG, "연결된 노드: ${nodes.size}개")
@@ -65,9 +76,10 @@ class WearableDataLayerService(private val context: Context) : MessageClient.OnM
                 
                 nodes.forEach { node ->
                     Log.d(TAG, "노드 ID: ${node.id}, 표시명: ${node.displayName}")
+                    // 명시적으로 모든 값을 String으로 변환하여 Flutter에서 타입 변환 오류 방지
                     nodesList.add(mapOf(
-                        "id" to node.id,
-                        "displayName" to node.displayName,
+                        "id" to node.id.toString(),
+                        "displayName" to node.displayName.toString(),
                         "isNearby" to node.isNearby.toString()
                     ))
                 }
@@ -88,7 +100,7 @@ class WearableDataLayerService(private val context: Context) : MessageClient.OnM
             try {
                 Log.d(TAG, "메시지 전송: 노드=$nodeId, 경로=$path")
                 val taskResult = withContext(Dispatchers.IO) {
-                    messageClient.sendMessage(nodeId, path, data).await()
+                    Tasks.await(messageClient.sendMessage(nodeId, path, data))
                 }
                 
                 // 메시지 경로별로 콜백 저장 (결과 받기 위해)
@@ -110,7 +122,7 @@ class WearableDataLayerService(private val context: Context) : MessageClient.OnM
         scope.launch {
             try {
                 val nodes = withContext(Dispatchers.IO) {
-                    nodeClient.connectedNodes.await()
+                    Tasks.await(nodeClient.connectedNodes)
                 }
                 
                 if (nodes.isEmpty()) {
@@ -124,7 +136,7 @@ class WearableDataLayerService(private val context: Context) : MessageClient.OnM
                 Log.d(TAG, "헬스 데이터 요청: ${firstNode.id} (${firstNode.displayName})")
                 
                 withContext(Dispatchers.IO) {
-                    messageClient.sendMessage(firstNode.id, "/request_health_data", byteArrayOf()).await()
+                    Tasks.await(messageClient.sendMessage(firstNode.id, "/request_health_data", byteArrayOf()))
                 }
                 
                 // 응답을 처리할 콜백 저장
@@ -149,7 +161,7 @@ class WearableDataLayerService(private val context: Context) : MessageClient.OnM
                 }
                 
                 val nodes = withContext(Dispatchers.IO) {
-                    nodeClient.connectedNodes.await()
+                    Tasks.await(nodeClient.connectedNodes)
                 }
                 
                 if (nodes.isEmpty()) {
@@ -163,11 +175,11 @@ class WearableDataLayerService(private val context: Context) : MessageClient.OnM
                 Log.d(TAG, "물 섭취량 업데이트: ${amount}ml, 노드=${firstNode.id}")
                 
                 withContext(Dispatchers.IO) {
-                    messageClient.sendMessage(
+                    Tasks.await(messageClient.sendMessage(
                         firstNode.id,
                         "/update_water_intake",
                         data.toString().toByteArray()
-                    ).await()
+                    ))
                 }
                 
                 // 응답을 처리할 콜백 저장
@@ -192,7 +204,7 @@ class WearableDataLayerService(private val context: Context) : MessageClient.OnM
                 }
                 
                 val nodes = withContext(Dispatchers.IO) {
-                    nodeClient.connectedNodes.await()
+                    Tasks.await(nodeClient.connectedNodes)
                 }
                 
                 if (nodes.isEmpty()) {
@@ -206,11 +218,11 @@ class WearableDataLayerService(private val context: Context) : MessageClient.OnM
                 Log.d(TAG, "카페인 섭취량 업데이트: ${amount}mg, 노드=${firstNode.id}")
                 
                 withContext(Dispatchers.IO) {
-                    messageClient.sendMessage(
+                    Tasks.await(messageClient.sendMessage(
                         firstNode.id,
                         "/update_caffeine_intake",
                         data.toString().toByteArray()
-                    ).await()
+                    ))
                 }
                 
                 // 응답을 처리할 콜백 저장
@@ -227,21 +239,26 @@ class WearableDataLayerService(private val context: Context) : MessageClient.OnM
      * 메시지 수신 처리
      */
     override fun onMessageReceived(messageEvent: MessageEvent) {
-        Log.d(TAG, "메시지 수신: ${messageEvent.path}, 발신자=${messageEvent.sourceNodeId}")
+        Log.d(TAG, "📲 메시지 수신됨: path=${messageEvent.path}, 발신자=${messageEvent.sourceNodeId}, 데이터 크기=${messageEvent.data?.size ?: 0}바이트")
         val data = messageEvent.data
         
         when (messageEvent.path) {
             "/health_data_response" -> {
                 try {
                     val jsonString = String(data, StandardCharsets.UTF_8)
-                    Log.d(TAG, "헬스 데이터 응답: $jsonString")
+                    Log.d(TAG, "📲 헬스 데이터 응답 수신: $jsonString")
                     
                     // Flutter로 결과 전달
                     val callback = messageCallbacks.remove("/health_data_response")
-                    callback?.success(jsonString)
+                    if (callback != null) {
+                        Log.d(TAG, "📲 헬스 데이터 응답 콜백 호출")
+                        callback.success(jsonString)
+                    } else {
+                        Log.w(TAG, "⚠️ 헬스 데이터 응답 콜백이 없습니다")
+                    }
                     
                 } catch (e: Exception) {
-                    Log.e(TAG, "헬스 데이터 파싱 실패", e)
+                    Log.e(TAG, "❌ 헬스 데이터 파싱 실패", e)
                     val callback = messageCallbacks.remove("/health_data_response")
                     callback?.error("PARSE_ERROR", "헬스 데이터 파싱 실패", e.message)
                 }
@@ -250,14 +267,19 @@ class WearableDataLayerService(private val context: Context) : MessageClient.OnM
             "/update_water_intake_result" -> {
                 try {
                     val jsonString = String(data, StandardCharsets.UTF_8)
-                    Log.d(TAG, "물 섭취량 업데이트 결과: $jsonString")
+                    Log.d(TAG, "📲 물 섭취량 업데이트 결과 수신: $jsonString")
                     
                     // Flutter로 결과 전달
                     val callback = messageCallbacks.remove("/update_water_intake_result")
-                    callback?.success(jsonString)
+                    if (callback != null) {
+                        Log.d(TAG, "📲 물 섭취량 업데이트 결과 콜백 호출")
+                        callback.success(jsonString)
+                    } else {
+                        Log.w(TAG, "⚠️ 물 섭취량 업데이트 결과 콜백이 없습니다")
+                    }
                     
                 } catch (e: Exception) {
-                    Log.e(TAG, "물 섭취량 업데이트 결과 파싱 실패", e)
+                    Log.e(TAG, "❌ 물 섭취량 업데이트 결과 파싱 실패", e)
                     val callback = messageCallbacks.remove("/update_water_intake_result")
                     callback?.error("PARSE_ERROR", "물 섭취량 업데이트 결과 파싱 실패", e.message)
                 }
@@ -266,17 +288,31 @@ class WearableDataLayerService(private val context: Context) : MessageClient.OnM
             "/update_caffeine_intake_result" -> {
                 try {
                     val jsonString = String(data, StandardCharsets.UTF_8)
-                    Log.d(TAG, "카페인 섭취량 업데이트 결과: $jsonString")
+                    Log.d(TAG, "📲 카페인 섭취량 업데이트 결과 수신: $jsonString")
                     
                     // Flutter로 결과 전달
                     val callback = messageCallbacks.remove("/update_caffeine_intake_result")
-                    callback?.success(jsonString)
+                    if (callback != null) {
+                        Log.d(TAG, "📲 카페인 섭취량 업데이트 결과 콜백 호출")
+                        callback.success(jsonString)
+                    } else {
+                        Log.w(TAG, "⚠️ 카페인 섭취량 업데이트 결과 콜백이 없습니다")
+                    }
                     
                 } catch (e: Exception) {
-                    Log.e(TAG, "카페인 섭취량 업데이트 결과 파싱 실패", e)
+                    Log.e(TAG, "❌ 카페인 섭취량 업데이트 결과 파싱 실패", e)
                     val callback = messageCallbacks.remove("/update_caffeine_intake_result")
                     callback?.error("PARSE_ERROR", "카페인 섭취량 업데이트 결과 파싱 실패", e.message)
                 }
+            }
+            
+            "/request_health_data" -> {
+                Log.d(TAG, "📲 헬스 데이터 요청 수신 (워치에서)")
+                // 여기서 필요한 헬스 데이터를 수집하고 응답을 보낼 수 있음
+            }
+            
+            else -> {
+                Log.d(TAG, "📲 인식할 수 없는 경로의 메시지 수신: ${messageEvent.path}")
             }
         }
     }
