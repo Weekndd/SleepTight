@@ -187,8 +187,8 @@ export class SleepSoundService {
     this.logger.debug('📌 loaded sounds:', sounds);
 
     //수면 음성이 없는 경우 빈배열로 리턴
-    if (!sounds || sounds.length===0) {
-      return {reportId, sounds: []};
+    if (!sounds || sounds.length === 0) {
+      return { reportId, sounds: [] };
     }
 
     const result = await Promise.all(

@@ -43,17 +43,30 @@ export class SleepDiariesService {
       return exist; // 이미 있으면 생성 안 함
     }
 
+    // 수면 날짜가 문자열이면 그대로 사용, Date 객체면 UTC 기준으로 변환
+    let sleepDate: string;
+    if (typeof report.sleepDate === 'string') {
+      sleepDate = report.sleepDate;
+    } else {
+      // UTC 기준 날짜 문자열로 변환
+      sleepDate = report.sleepDate.toISOString().split('T')[0];
+    }
+
+    // 시간은 항상 UTC 기준으로 처리
+    const sleepTime = report.sleepStartTime
+      .toISOString()
+      .split('T')[1]
+      .split('.')[0]; // HH:MM:SS in UTC
+    const wakeTime = report.sleepEndTime
+      ?.toISOString()
+      .split('T')[1]
+      .split('.')[0]; // HH:MM:SS in UTC
+
     const diary = this.diaryRepo.create({
       sleepReportId: report.id,
-      sleepDate:
-        typeof report.sleepDate === 'string'
-          ? report.sleepDate
-          : report.sleepDate.toISOString().split('T')[0],
-      sleepTime: report.sleepStartTime
-        .toISOString()
-        .split('T')[1]
-        .split('.')[0], // HH:MM:SS
-      wakeTime: report.sleepEndTime?.toISOString().split('T')[1].split('.')[0], // HH:MM:SS
+      sleepDate: sleepDate,
+      sleepTime: sleepTime,
+      wakeTime: wakeTime,
       sleepLatency: report.sleepLatency,
       wakeCount: report.awakenCount,
     });
@@ -128,13 +141,26 @@ export class SleepDiariesService {
       throw new BadRequestException('date는 YYYY-MM-DD 형식이어야 합니다.');
     }
 
-    // 2) QueryBuilder 로 date 문자열 직접 바인딩
+    // 2) UTC 기준으로 날짜 범위 구하기 (00:00:00 ~ 23:59:59)
+    const inputDate = new Date(date);
+    const start = new Date(
+      Date.UTC(
+        inputDate.getFullYear(),
+        inputDate.getMonth(),
+        inputDate.getDate(),
+      ),
+    );
+    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1);
+
+    // 3) QueryBuilder 수정하여 날짜 범위로 조회
     const reports = await this.reportRepo
       .createQueryBuilder('report')
       .select('report.id')
       .where('report.user_id = :userId', { userId })
       .andWhere('report.is_valid_report = :isValid', { isValid: true })
-      .andWhere('report.sleep_date = :date', { date })
+      .andWhere('report.sleep_date = :date', {
+        date: start.toISOString().split('T')[0],
+      })
       .orderBy('report.sleep_end_time', 'DESC')
       .getMany();
 
@@ -142,7 +168,7 @@ export class SleepDiariesService {
       return [];
     }
 
-    // 3) diary 조회 및 매핑
+    // 4) diary 조회 및 매핑
     const reportIds = reports.map((r) => r.id);
     const diaries = await this.diaryRepo.find({
       where: { sleepReportId: In(reportIds) },
@@ -153,7 +179,7 @@ export class SleepDiariesService {
       if (!diaryMap.has(d.sleepReportId)) diaryMap.set(d.sleepReportId, d);
     }
 
-    // 4) 순서대로 DTO 나열 (없으면 null)
+    // 5) 순서대로 DTO 나열 (없으면 null)
     return reports.map((r) => {
       const ent = diaryMap.get(r.id);
       return ent ? this.toResponseDto(ent) : null;

@@ -105,12 +105,28 @@ export class SleepReportController {
     type: [SleepReportResponseDto],
   })
   async getReportsByDate(@Request() req, @Param('date') date: string) {
+    // 날짜 형식 검증
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new BadRequestException(ExceptionCode.INVALID_DATE_FORMAT);
+    }
+
     const userId = req.user.userId;
     const reportList = await this.sleepReportService.getReportsByDateWithStages(
       userId,
       date,
     );
-    return reportList;
+
+    // 기존 응답 형식 유지 (필드 추가 없이)
+    return reportList.map((report) => ({
+      ...report,
+      sleep_start_time: report.sleep_start_time.toISOString(),
+      sleep_end_time: report.sleep_end_time?.toISOString(),
+      sleep_stage: report.sleep_stage.map((stage) => ({
+        ...stage,
+        startTime: stage.startTime.toISOString(),
+        endTime: stage.endTime.toISOString(),
+      })),
+    }));
   }
 
   @Get('events/:reportId')
