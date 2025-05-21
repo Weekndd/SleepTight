@@ -271,19 +271,20 @@ class _SleepReportViewState extends State<SleepReportView> {
             },
           ),
         ),
-        PageIndicator(
-          total: widget.reports.length,
-          current: _currentIndex,
-          onChanged: (index) {
-            _controller.animateToPage(
-              index,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-            );
-            setState(() => _currentIndex = index);
-            widget.onPageChanged?.call(index);
-          },
-        ),
+        if (widget.reports.length > 1)
+          PageIndicator(
+            total: widget.reports.length,
+            current: _currentIndex,
+            onChanged: (index) {
+              _controller.animateToPage(
+                index,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+              setState(() => _currentIndex = index);
+              widget.onPageChanged?.call(index);
+            },
+          ),
       ],
     );
   }
