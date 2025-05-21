@@ -288,7 +288,6 @@ export class UserService {
       user.sleepPreferences.targetSleepTime = sleepTime;
 
       await this.userRepository.update(user.id, {
-        sleep_time: sleepTime, // 이전 버전과의 호환성을 위해
         sleepPreferences: user.sleepPreferences,
       });
 
@@ -330,7 +329,6 @@ export class UserService {
       user.sleepPreferences.targetWakeTime = wakeTime;
 
       await this.userRepository.update(user.id, {
-        wake_time: wakeTime, // 이전 버전과의 호환성을 위해
         sleepPreferences: user.sleepPreferences,
       });
 
