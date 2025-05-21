@@ -21,24 +21,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 export class SleepDiariesController {
   constructor(private readonly diariesService: SleepDiariesService) {}
 
-  /** 특정 리포트 일지 조회 */
-  @Get(':reportId')
-  async findByReportId(
-    @Req() req,
-    @Param('reportId') reportId: string,
-  ): Promise<SleepDiaryResponseDto> {
-    const userId = req.user.userId;
-    return this.diariesService.findByReportId(userId, +reportId);
-  }
-
-  /** 일지 수정 */
-  @Patch()
-  update(@Req() req, @Body() dto: UpdateSleepDiaryDto) {
-    const userId = req.user.userId;
-    return this.diariesService.update(userId, dto);
-  }
-
-  /** 특정 일자 일지 목록 조회*/
+  /** 특정 일자 일지 목록 조회 - 구체적인 경로가 먼저 오도록 순서 변경 */
   @Get('date/:date')
   async findByDate(
     @Req() req,
@@ -54,5 +37,22 @@ export class SleepDiariesController {
 
     // 기존 응답 형식 유지
     return diaries;
+  }
+
+  /** 특정 리포트 일지 조회 */
+  @Get(':reportId')
+  async findByReportId(
+    @Req() req,
+    @Param('reportId') reportId: string,
+  ): Promise<SleepDiaryResponseDto> {
+    const userId = req.user.userId;
+    return this.diariesService.findByReportId(userId, +reportId);
+  }
+
+  /** 일지 수정 */
+  @Patch()
+  update(@Req() req, @Body() dto: UpdateSleepDiaryDto) {
+    const userId = req.user.userId;
+    return this.diariesService.update(userId, dto);
   }
 }
