@@ -7,6 +7,7 @@ import {
   Param,
   Req,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { SleepDiariesService } from './sleep-diaries.service';
@@ -43,7 +44,15 @@ export class SleepDiariesController {
     @Req() req,
     @Param('date') date: string,
   ): Promise<(SleepDiaryResponseDto | null)[]> {
+    // 날짜 형식 검증
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new BadRequestException('date는 YYYY-MM-DD 형식이어야 합니다.');
+    }
+
     const userId = req.user.userId;
-    return this.diariesService.findByDate(userId, date);
+    const diaries = await this.diariesService.findByDate(userId, date);
+
+    // 기존 응답 형식 유지
+    return diaries;
   }
 }

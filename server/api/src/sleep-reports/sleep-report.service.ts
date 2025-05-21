@@ -51,39 +51,40 @@ export class SleepReportService {
 
     // 사용자 시간대 설정 (기본값: Asia/Seoul)
     const userTimezone = user.sleepPreferences?.timezone || 'Asia/Seoul';
-    
+
     // 사용자 수면 설정 가져오기 (없으면 기본값 사용)
-    const targetWakeTime = user.sleepPreferences?.targetWakeTime || user.wake_time || "07:00";
+    const targetWakeTime =
+      user.sleepPreferences?.targetWakeTime || user.wake_time || '07:00';
     const [wakeHourStr, wakeMinuteStr] = targetWakeTime.split(':');
-    
+
     // 수면 시작 시간을 사용자 시간대로 변환
     const options = { timeZone: userTimezone };
     const localTime = sleepStartTime.toLocaleString('en-US', options);
     const startDateInLocal = new Date(localTime);
-    
+
     // 사용자 시간대 기준 목표 기상 시간 설정
     const wakeTimeInLocal = new Date(startDateInLocal);
     wakeTimeInLocal.setHours(
       parseInt(wakeHourStr, 10),
       parseInt(wakeMinuteStr, 10),
       0,
-      0
+      0,
     );
-    
+
     // 사용자 시간대 기준으로 수면 날짜 결정
     const sleepDateInLocal = new Date(startDateInLocal);
     if (startDateInLocal.getTime() < wakeTimeInLocal.getTime()) {
       // 수면 시작이 목표 기상 시간보다 이전이면 전날로 간주
       sleepDateInLocal.setDate(sleepDateInLocal.getDate() - 1);
     }
-    
+
     // 날짜만 포함하는 UTC 기준 날짜 생성 (사용자 시간대의 날짜 기준)
     const sleepDateOnly = new Date(
       Date.UTC(
         sleepDateInLocal.getFullYear(),
         sleepDateInLocal.getMonth(),
-        sleepDateInLocal.getDate()
-      )
+        sleepDateInLocal.getDate(),
+      ),
     );
 
     // 리포트 생성
@@ -92,10 +93,10 @@ export class SleepReportService {
       sleepStartTime,
       sleepDateOnly,
     );
-    
+
     // 목표 시간 설정 (getter를 통해 접근)
-    newReport.targetStartTime = user.sleep_time || "22:00";
-    newReport.targetEndTime = user.wake_time || "07:00";
+    newReport.targetStartTime = user.sleep_time || '22:00';
+    newReport.targetEndTime = user.wake_time || '07:00';
     newReport.isValidReport = false;
 
     // 저장 후 리포트 ID 반환
@@ -226,16 +227,22 @@ export class SleepReportService {
     date: string,
   ): Promise<any[]> {
     // 날짜 유효성 검사
-    const inputDate = new Date(date);
-    if (!date || isNaN(inputDate.getTime())) {
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       throw new BadRequestException(ExceptionCode.INVALID_DATE_FORMAT);
     }
-    
+
+    const dateComponents = date.split('-').map(Number);
+
     // UTC 기준으로 날짜 범위 구하기 (00:00:00 ~ 23:59:59)
     const start = new Date(
-      Date.UTC(inputDate.getUTCFullYear(), inputDate.getUTCMonth(), inputDate.getUTCDate())
+      Date.UTC(dateComponents[0], dateComponents[1] - 1, dateComponents[2]),
     );
     const end = new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1);
+
+    this.logger.debug(`getReportsByDateWithStages: 검색 날짜 범위 UTC`, {
+      startUTC: start.toISOString(),
+      endUTC: end.toISOString(),
+    });
 
     const reports = await this.reportRepo.find({
       where: {
@@ -252,6 +259,19 @@ export class SleepReportService {
           where: { sleepReportId: report.id },
           order: { stageStartTime: 'ASC' },
         });
+
+        // UTC 시간 그대로 사용 (KST 변환 제거)
+        const sleepStages = stages.map((s) => ({
+          stageType: s.stageType,
+          startTime: s.stageStartTime,
+          endTime: s.stageEndTime,
+          duration: s.durationMinutes,
+        }));
+
+        this.logger.debug(
+          `수면 단계 로그 - reportId: ${report.id}, 단계 수: ${stages.length}`,
+        );
+
         return {
           sleepReportId: report.id,
           sleep_start_time: report.sleepStartTime,
@@ -262,12 +282,7 @@ export class SleepReportService {
           total_light_sleep_time: report.totalLightSleepTime,
           total_deep_sleep_time: report.totalDeepSleepTime,
           awaken_count: report.awakenCount,
-          sleep_stage: stages.map((s) => ({
-            stageType: s.stageType,
-            startTime: s.stageStartTime,
-            endTime: s.stageEndTime,
-            duration: s.durationMinutes,
-          })),
+          sleep_stage: sleepStages,
         };
       }),
     );
