@@ -37,6 +37,10 @@ export class RequestRegisterUserInfoDto {
     @Expose({ name: 'weight_unit' })
     weightUnit: string
 
+    @ApiProperty()
+    @Expose({name:"fcm_token"})
+    fcmToken: string
+
     static toEntity(userInfo: RequestRegisterUserInfoDto, user :User): User{
         user.first_name = userInfo.firstName;
         user.last_name = userInfo.lastName;
@@ -48,6 +52,7 @@ export class RequestRegisterUserInfoDto {
         user.length_unit = userInfo.lengthUnit;
         user.weight_unit = userInfo.weightUnit;
         user.status = UserStatus.ACTIVE;
+        user.fcm_token = userInfo.fcmToken;
         return user;
     }
 }

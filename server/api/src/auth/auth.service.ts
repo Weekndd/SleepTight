@@ -18,6 +18,7 @@ import {
   throwNotFoundException,
   throwUnauthorizedException,
 } from 'src/common/exceptions/exception.helper';
+import { UserStatus } from 'src/users/user-status.enum';
 
 @Injectable()
 export class AuthService {
@@ -99,11 +100,22 @@ export class AuthService {
     });
 
     existingUser.refresh_token = refreshToken;
-    await this.userRepository.update(existingUser.id, 
+
+    //휴면유저가 로그인한 경우 active로 전환
+    if(existingUser.status === 'dormant') {
+      await this.userRepository.update(existingUser.id, 
+      {
+        refresh_token: refreshToken,
+        visited_at : new Date(),
+        status : UserStatus.ACTIVE
+      });
+    } else {
+      await this.userRepository.update(existingUser.id, 
       {
         refresh_token: refreshToken,
         visited_at : new Date()
       });
+    }
 
     return ResponseOauthLoginDto.fromEntity(
       existingUser,
