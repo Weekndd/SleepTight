@@ -89,7 +89,7 @@ class _SleepReportViewState extends ConsumerState<SleepReportView> {
               final rem = report.totalRemSleepTime ?? Duration.zero;
               final awakenCount = report.awakenCount ?? 0;
 
-              final totalSleep = light + deep + rem;
+              final totalSleep = light + deep + rem + awake;
               final durationInBed = report.sleepEndTime.difference(
                 report.sleepStartTime,
               );

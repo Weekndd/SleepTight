@@ -348,7 +348,8 @@ class _SleepSoundState extends ConsumerState<SleepSound> {
           );
         }
 
-        final sounds = snapshot.data!;
+        final sounds =
+            snapshot.data!.where((sound) => sound.events.isNotEmpty).toList();
         if (sounds.isEmpty) {
           return Padding(
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
