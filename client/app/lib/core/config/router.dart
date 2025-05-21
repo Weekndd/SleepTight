@@ -211,9 +211,6 @@ final goRouterProvider = Provider.family<GoRouter, GlobalKey<NavigatorState>>((
           GoRoute(
             path: 'info', // 상대 경로: /mypage/info
             name: 'mypage-info',
-            // pageBuilder를 사용하면 부모의 ShellScreen이 적용되지 않을 수 있으므로,
-            // builder를 사용하고 컨텐츠만 교체하거나, MyPage 자체를 ShellRoute로 만들어야 함.
-            // 여기서는 간단히 builder 사용. ShellScreen을 계속 사용하려면 MyPage 자체를 ShellRoute로 고려.
             pageBuilder:
                 (context, state) => const NoTransitionPage(
                   child: ShellScreen(body: MyPageInfoScreen()),
@@ -277,7 +274,7 @@ final goRouterProvider = Provider.family<GoRouter, GlobalKey<NavigatorState>>((
               ),
               GoRoute(
                 path:
-                    'withdraw-confirmation', // “/mypage/info/withdraw-confirmation”
+                    'withdraw-confirmation', // "/mypage/info/withdraw-confirmation"
                 name: 'mypage-info-withdraw-confirmation',
                 pageBuilder:
                     (context, state) => const NoTransitionPage(

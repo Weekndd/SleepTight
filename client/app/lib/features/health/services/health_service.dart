@@ -334,4 +334,19 @@ class HealthService {
       print("Health Connect 권한 요청 중 오류: $e");
     }
   }
+
+  Future<Map<String, dynamic>> fetchDataForWatch() async {
+    // TODO: 실제 데이터 반환 로직 구현
+    return {};
+  }
+
+  Future<bool> writeWaterIntake(double amount, DateTime dateTime) async {
+    // TODO: 실제 저장 로직 구현
+    return true;
+  }
+
+  Future<bool> writeCaffeineIntake(double amount, DateTime dateTime) async {
+    // TODO: 실제 저장 로직 구현
+    return true;
+  }
 }
