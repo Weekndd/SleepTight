@@ -150,6 +150,16 @@ class AppTextStyles {
     letterSpacing: -0.45, // -2.5% of 18 = -0.45   color: color,
   );
 
+  // Caption/C1_Rg
+  static TextStyle captionC1Rg({required Color color}) => TextStyle(
+    fontFamily: 'Pretendard',
+    fontWeight: FontWeight.w400, // regular
+    fontSize: 13,
+    height: 1.4, // 140%
+    letterSpacing: -0.325, // -2.5% of 13 = -0.325
+    color: color,
+  );
+
   // Caption/C3_Rg
   static TextStyle captionC3Rg({required Color color}) => TextStyle(
     fontFamily: 'Pretendard',
