@@ -165,9 +165,10 @@ export class SleepSoundService {
     for (const sound of sounds) {
       for (const event of sound.events ?? []) {
         const duration = event.endSec - event.startSec;
-        if (event.anomaly === 'SNORE') snoring += duration;
-        else if (event.anomaly === 'SOMNILOQUY') somniloquy += duration;
-        else if (event.anomaly === 'COUGH') coughing += duration;
+        if (event.anomaly === AnomalyType.SNORE) snoring += duration;
+        else if (event.anomaly === AnomalyType.SOMNILOQUY)
+          somniloquy += duration;
+        else if (event.anomaly === AnomalyType.COUGH) coughing += duration;
       }
     }
 
@@ -187,8 +188,8 @@ export class SleepSoundService {
     this.logger.debug('📌 loaded sounds:', sounds);
 
     //수면 음성이 없는 경우 빈배열로 리턴
-    if (!sounds || sounds.length===0) {
-      return {reportId, sounds: []};
+    if (!sounds || sounds.length === 0) {
+      return { reportId, sounds: [] };
     }
 
     const result = await Promise.all(
