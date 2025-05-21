@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import java.util.Calendar
 
 private const val TAG = "WearCommunication"
 private const val PREFS_NAME = "health_data_prefs"
@@ -31,6 +32,7 @@ private const val KEY_WATER = "water_amount"
 private const val KEY_CAFFEINE = "caffeine_amount"
 private const val KEY_STEPS = "steps_count"
 private const val KEY_CALORIES = "calories_amount"
+private const val KEY_LAST_DATE = "last_date_saved"
 
 /**
  * 웨어러블 통신 리포지토리
@@ -52,6 +54,13 @@ class WearableRepository(private val context: Context) {
     // 데이터 클라이언트 초기화
     fun initialize() {
         Log.d(TAG, "WearableRepository 초기화")
+        
+        // 날짜 변경 확인 및 초기화
+        checkAndResetDailyData()
+        
+        // 저장된 값 로그 출력
+        logCurrentStoredValues()
+        
         try {
             // 필요한 경우 DataClient 초기화 
             val dataClient = Wearable.getDataClient(context)
@@ -70,6 +79,47 @@ class WearableRepository(private val context: Context) {
         } catch (e: Exception) {
             Log.e(TAG, "데이터 클라이언트 초기화 실패", e)
         }
+    }
+    
+    // 날짜 변경 시 데이터 초기화
+    private fun checkAndResetDailyData() {
+        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        val lastSavedDate = prefs.getString(KEY_LAST_DATE, "")
+        
+        Log.d(TAG, "날짜 확인 - 현재: $currentDate, 마지막 저장: $lastSavedDate")
+        
+        if (lastSavedDate != currentDate) {
+            // 날짜가 변경되었으면 일일 데이터 초기화
+            val editor = prefs.edit()
+            editor.putInt(KEY_WATER, 0)
+            editor.putInt(KEY_CAFFEINE, 0)
+            // 걸음수와 칼로리는 초기화하지 않고 누적 (선택사항)
+            // editor.putInt(KEY_STEPS, 0)
+            // editor.putInt(KEY_CALORIES, 0)
+            editor.putString(KEY_LAST_DATE, currentDate)
+            editor.apply()
+            
+            // 메모리상의 데이터도 초기화
+            val currentData = _healthData.value
+            _healthData.value = currentData.copy(
+                water = 0,
+                caffeine = 0
+                // steps = 0,
+                // calories = 0
+            )
+            
+            Log.d(TAG, "날짜 변경으로 일일 데이터 초기화 완료 (${lastSavedDate} → ${currentDate})")
+        }
+    }
+    
+    // 현재 저장된 값 로그 출력
+    private fun logCurrentStoredValues() {
+        val water = prefs.getInt(KEY_WATER, 0)
+        val caffeine = prefs.getInt(KEY_CAFFEINE, 0)
+        val steps = prefs.getInt(KEY_STEPS, 0)
+        val calories = prefs.getInt(KEY_CALORIES, 0)
+        
+        Log.d(TAG, "현재 저장된 값 - 물: ${water}ml, 카페인: ${caffeine}mg, 걸음수: $steps, 칼로리: ${calories}kcal")
     }
     
     // 리소스 해제
@@ -98,15 +148,20 @@ class WearableRepository(private val context: Context) {
             putInt(KEY_CALORIES, healthData.calories)
             putInt(KEY_WATER, healthData.water)
             putInt(KEY_CAFFEINE, healthData.caffeine)
+            // 마지막 저장 날짜 업데이트
+            putString(KEY_LAST_DATE, SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()))
             apply()
         }
+        
+        // 저장 후 로그
+        Log.d(TAG, "데이터 저장 완료 - 물: ${healthData.water}ml, 카페인: ${healthData.caffeine}mg")
     }
     
     // 로컬 상태 업데이트 및 저장
     fun updateLocalData(newData: HealthData) {
         _healthData.value = newData
         saveHealthDataToPrefs(newData)
-        Log.d(TAG, "💾 로컬 데이터 업데이트 완료 - 물: ${newData.water}, 카페인: ${newData.caffeine}")
+        Log.d(TAG, "💾 로컬 데이터 업데이트 완료 - 물: ${newData.water}ml, 카페인: ${newData.caffeine}mg, 걸음수: ${newData.steps}, 칼로리: ${newData.calories}kcal")
     }
     
     // 모든 연결된 노드 가져오기
@@ -123,6 +178,7 @@ class WearableRepository(private val context: Context) {
     private suspend fun sendData(path: String, dataMap: JSONObject): Boolean {
         try {
             Log.d(TAG, "DataClient를 사용하여 데이터 전송: $path")
+            Log.d(TAG, "전송 데이터 내용: $dataMap")
             
             // PutDataMapRequest 생성
             val request = PutDataMapRequest.create(path).apply {
@@ -213,7 +269,7 @@ class WearableRepository(private val context: Context) {
     // 모바일로부터 받은 헬스 데이터로 업데이트
     fun updateFromMobileData(jsonData: String) {
         try {
-            Log.d(TAG, "모바일 앱에서 헬스 데이터 수신: $jsonData")
+            Log.d(TAG, "모바일 앱에서 헬스 데이터 수신 상세: $jsonData")
             val jsonObject = JSONObject(jsonData)
             
             val calories = jsonObject.optDouble("calories", 0.0).toInt()
@@ -225,6 +281,8 @@ class WearableRepository(private val context: Context) {
             val caloriesGoal = jsonObject.optInt("calories_goal", 2000)
             val waterGoal = jsonObject.optInt("water_goal", 2000)
             val caffeineGoal = jsonObject.optInt("caffeine_goal", 400)
+            
+            Log.d(TAG, "파싱된 데이터 - 걸음수: $steps, 칼로리: $calories, 물: ${water}ml, 카페인: ${caffeine}mg")
             
             val updatedData = HealthData(
                 steps, calories, water, caffeine,

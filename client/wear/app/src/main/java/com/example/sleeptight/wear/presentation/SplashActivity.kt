@@ -1,11 +1,11 @@
-package com.example.wear.presentation
+package com.example.sleeptight.wear.presentation
 
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.activity.ComponentActivity
-import com.example.wear.R
+import com.example.sleeptight.wear.R
 
 class SplashActivity : ComponentActivity() {
     

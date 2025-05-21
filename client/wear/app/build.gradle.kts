@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.wear"
+    namespace = "com.example.sleeptight.wear"
     compileSdk = 34         // SDK 버전 수정
 
     defaultConfig {
-        applicationId = "com.example.wear"
+        applicationId = "com.example.sleeptight"
         minSdk = 30            // Wear OS 최소 버전 30
         targetSdk = 34
         versionCode = 1
@@ -63,6 +63,7 @@ dependencies {
     implementation("androidx.wear:wear:1.3.0")
     implementation("androidx.wear.compose:compose-material:1.2.1")
     implementation("androidx.wear.compose:compose-foundation:1.2.1")
+    implementation("androidx.wear.compose:compose-navigation:1.2.1")
     
     // Pager 의존성 추가
     implementation("com.google.accompanist:accompanist-pager:0.30.1")
