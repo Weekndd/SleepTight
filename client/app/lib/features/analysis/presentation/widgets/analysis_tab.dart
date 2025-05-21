@@ -1,24 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:sleep_tight/core/config/app_config.dart';
 import 'package:sleep_tight/core/config/theme/color.dart';
-import 'package:sleep_tight/features/analysis/presentation/providers/selected_date_provider.dart';
-import 'package:sleep_tight/features/analysis/presentation/screens/sleep_diary_view.dart';
-import 'package:sleep_tight/features/analysis/presentation/screens/sleep_report_page_view.dart';
+import 'package:sleep_tight/core/config/theme/text_styles.dart';
+import 'package:sleep_tight/features/analysis/data/models/sleep_report_model.dart';
+import 'package:sleep_tight/features/analysis/presentation/screens/sleep_report_view.dart';
+import 'package:sleep_tight/features/analysis/presentation/widgets/sleep_diary_pages.dart';
 
-class AnalysisTab extends ConsumerStatefulWidget {
+class AnalysisTab extends StatefulWidget {
+  final List<SleepReportModel> reports;
   final int initialTabIndex;
+  final void Function(int index)? onTabChanged;
 
-  const AnalysisTab({super.key, this.initialTabIndex = 0});
+  const AnalysisTab({
+    super.key,
+    required this.reports,
+    this.initialTabIndex = 0,
+    this.onTabChanged,
+  });
 
   @override
-  ConsumerState<AnalysisTab> createState() => _AnalysisTabState();
+  State<AnalysisTab> createState() => _AnalysisTabState();
 }
 
-class _AnalysisTabState extends ConsumerState<AnalysisTab>
+class _AnalysisTabState extends State<AnalysisTab>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+  late TabController _tabController;
+  int _currentReportIndex = 0;
+  late PageController _reportPageController;
 
   @override
   void initState() {
@@ -28,46 +35,54 @@ class _AnalysisTabState extends ConsumerState<AnalysisTab>
       vsync: this,
       initialIndex: widget.initialTabIndex,
     );
-
     _tabController.addListener(() {
-      if (_tabController.indexIsChanging) return;
-      final index = _tabController.index;
-      final tab = index == 0 ? 'report' : 'diary';
-      context.go('${AppConfig.routes.sleepAnalysis}?tab=$tab');
+      if (_tabController.indexIsChanging) {
+        widget.onTabChanged?.call(_tabController.index);
+      }
     });
+    _reportPageController = PageController(initialPage: _currentReportIndex);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _reportPageController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final selectedDate = ref.watch(selectedDateProvider);
+    final reports = widget.reports;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TabBar(
           controller: _tabController,
           labelColor: AppColors.white,
+          labelStyle: AppTextStyles.bodyB4Sb(color: AppColors.white),
           unselectedLabelColor: AppColors.font2,
           dividerColor: AppColors.gray06,
           dividerHeight: 0.2,
           indicatorSize: TabBarIndicatorSize.tab,
-          indicator: UnderlineTabIndicator(
+          indicator: const UnderlineTabIndicator(
             borderSide: BorderSide(width: 1, color: AppColors.white),
           ),
-          tabs: [Tab(text: '수면 리포트'), Tab(text: '수면 일지')],
+          tabs: [Tab(text: "수면 리포트"), Tab(text: "수면 일지")],
         ),
         Expanded(
           child: TabBarView(
             controller: _tabController,
+            physics: const NeverScrollableScrollPhysics(),
             children: [
-              SleepReportPageView(date: selectedDate),
-              SleepDiaryView(),
+              SleepReportView(
+                reports: reports,
+                onPageChanged: (i) {
+                  if (_currentReportIndex != i) {
+                    setState(() => _currentReportIndex = i);
+                  }
+                },
+              ),
+              SleepDiaryPages(reports: reports),
             ],
           ),
         ),

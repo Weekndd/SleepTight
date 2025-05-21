@@ -119,8 +119,9 @@ class _SleepApiPaths {
       '${ApiPaths._sleepDomain}/events'; // GET api/sleep/events
   String coaching(String date) =>
       '${ApiPaths._sleepDomain}-coaching/$date'; // GET api/sleep-coaching/{date}
-  String get activityData =>
-      '${ApiPaths._sleepDomain}/activity-data'; // POST api/sleep/activity-data
+  String get activityData => '/activity-data'; // POST api/activity-data
+  String get coachRequest =>
+      '${ApiPaths._sleepDomain}-coaching'; // POST api/sleep-coaching
 
   // Sleep Reports (under /sleep/report/*)
   String get reportBase =>
@@ -129,14 +130,14 @@ class _SleepApiPaths {
       '${ApiPaths._sleepDomain}-report/$date'; // GET api/sleep/report/{date}
   String eventsByReportId(int reportId) =>
       '${ApiPaths._sleepDomain}-report/events/$reportId'; // => GET api/sleep/report/events/{reportId}
-  String reportCalendarByMonth(String month) =>
-      '${ApiPaths._sleepDomain}-report/calendar'; // GET api/sleep/report/calendar
+  String get reportCalendarByMonth =>
+      '${ApiPaths._sleepDomain}-report/calendar'; // GET api/sleep-report/calendar
 
   // Sleep Diaries (under /sleep-reports/diaries/*)
-  String get diariesBase =>
-      '${ApiPaths._sleepReportsDomain}/diaries'; // POST api/sleep-reports/diaries
   String diaryByDate(String date) =>
       '${ApiPaths._sleepReportsDomain}/diaries/$date'; // GET api/sleep-reports/diaries/{date}
+  String diaryById(int reportId) =>
+      '${ApiPaths._sleepReportsDomain}/diaries/$reportId'; // GET api/sleep-reports/diaries/{reportId}
   String get updateDiary =>
       '${ApiPaths._sleepReportsDomain}/diaries'; // PATCH api/sleep-reports/diaries
 }
@@ -147,7 +148,8 @@ class _MusicApiPaths {
   // GET api/music/{musicId}
   String musicById(String musicId) => '${ApiPaths._musicDomain}/$musicId';
   // GET api/music?category={category} (query param added by Dio) & POST api/music
-  String get base => ApiPaths._musicDomain;
+  String musicsByCategory(String category) =>
+      '${ApiPaths._musicDomain}?category=$category';
   // PATCH api/music/like & GET api/music/like
   String get like => '${ApiPaths._musicDomain}/like';
   // GET api/music/popular

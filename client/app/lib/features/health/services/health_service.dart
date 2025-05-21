@@ -45,7 +45,7 @@ class HealthService {
   ];
 
   // Helper to ensure Health plugin is configured
-  Future<void> _ensureConfigured() async {
+  Future<void> ensureConfigured() async {
     if (!_isConfigured) {
       try {
         // Health Connect 사용 가능하면 사용하도록 설정 (Android 해당)
@@ -62,7 +62,7 @@ class HealthService {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    await _ensureConfigured();
+    await ensureConfigured();
     if (!_isConfigured) {
       print("HealthService: 설정 실패, 활동 데이터를 가져올 수 없습니다.");
       return [];
@@ -76,7 +76,6 @@ class HealthService {
     bool permissionsGranted = false;
 
     try {
-      // 데이터를 읽기 전에 데이터 유형에 대한 액세스 요청
       permissionsGranted = await _health.requestAuthorization(_activityTypes);
     } catch (e) {
       print("활동 유형에 대한 권한 요청 중 오류 발생: $e");
@@ -105,7 +104,7 @@ class HealthService {
     DateTime startDate,
     DateTime endDate,
   ) async {
-    await _ensureConfigured();
+    await ensureConfigured();
     if (!_isConfigured) {
       print("HealthService: 설정 실패, 수면 데이터를 가져올 수 없습니다.");
       return [];
@@ -147,7 +146,7 @@ class HealthService {
 
   /// 활동 및 수면 데이터를 문자열로 포맷하여 반환합니다.
   Future<String> getHealthDataAsString() async {
-    await _ensureConfigured();
+    await ensureConfigured();
     if (!_isConfigured) {
       return "HealthService: 설정 실패, 데이터를 문자열로 변환할 수 없습니다.";
     }
@@ -301,6 +300,38 @@ class HealthService {
     } catch (e) {
       print("HealthService: TXT 파일 내보내기 중 오류 발생: $e");
       // UI에 오류 메시지를 표시하도록 오류를 다시 throw하거나 상태를 관리할 수 있습니다.
+    }
+  }
+
+  Future<void> requestHealthPermissions() async {
+    // configure 한 번만 실행
+    if (!_isConfigured) {
+      try {
+        await _health.configure();
+        _isConfigured = true;
+      } catch (e) {
+        print('Health Connect 초기화 실패: $e');
+        return;
+      }
+    }
+
+    // Android 시스템 권한 요청 (Activity, Location)
+    await Permission.activityRecognition.request();
+    await Permission.location.request();
+
+    // Health Connect 권한 요청
+    try {
+      final granted = await _health.requestAuthorization([
+        ..._activityTypes,
+        ..._sleepDataTypes,
+      ]);
+      if (granted) {
+        print("Health Connect 권한 획득 완료");
+      } else {
+        print("Health Connect 권한 거부됨");
+      }
+    } catch (e) {
+      print("Health Connect 권한 요청 중 오류: $e");
     }
   }
 

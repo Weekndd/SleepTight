@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:sleep_tight/core/config/theme/color.dart';
-import 'package:sleep_tight/features/analysis/data/models/sleep_report.dart';
+import 'package:sleep_tight/core/config/theme/text_styles.dart';
+import 'package:sleep_tight/features/analysis/data/models/sleep_report_model.dart';
 
 class SleepStageLineChart extends StatelessWidget {
-  final List<SleepStage> stages;
+  final List<SleepStageModel> stages;
 
   const SleepStageLineChart({super.key, required this.stages});
 
@@ -18,7 +19,7 @@ class SleepStageLineChart extends StatelessWidget {
 }
 
 class _SleepStageChartPainter extends CustomPainter {
-  final List<SleepStage> stages;
+  final List<SleepStageModel> stages;
 
   _SleepStageChartPainter(this.stages);
 
@@ -30,18 +31,21 @@ class _SleepStageChartPainter extends CustomPainter {
   };
 
   static const Map<String, Color> sleepStageColor = {
-    'AWAKE': AppColors.pink,
-    'REM': AppColors.pink,
-    'LIGHT': AppColors.pink,
-    'DEEP': AppColors.pink,
+    'AWAKE': AppColors.sub1,
+    'REM': AppColors.sub1,
+    'LIGHT': AppColors.sub1,
+    'DEEP': AppColors.sub1,
   };
 
   @override
   void paint(Canvas canvas, Size size) {
     if (stages.isEmpty) return;
 
-    final baseTime = stages.first.startTime;
-    final endTime = stages.last.endTime;
+    final baseUtcTime = stages.first.startTime;
+    final endUtcTime = stages.last.endTime;
+    final baseTime = baseUtcTime;
+    final endTime = endUtcTime;
+
     final totalMinutes = endTime.difference(baseTime).inMinutes;
     final totalDuration = stages.last.endTime.difference(baseTime).inMinutes;
 
@@ -49,7 +53,7 @@ class _SleepStageChartPainter extends CustomPainter {
     final double chartHeight = size.height - labelHeight;
     final double chartWidth = size.width;
 
-    Offset pointFor(SleepStage s) {
+    Offset pointFor(SleepStageModel s) {
       final minutes = s.startTime.difference(baseTime).inMinutes;
       final x = (minutes / totalDuration) * chartWidth;
       final yLevel = stageToY[s.stageType] ?? 0;
@@ -73,7 +77,7 @@ class _SleepStageChartPainter extends CustomPainter {
       canvas.drawLine(start, end, paint);
     }
 
-    final textStyle = TextStyle(color: AppColors.font2, fontSize: 11);
+    final textStyle = AppTextStyles.captionC3Rg(color: AppColors.font2);
 
     // 시작 시간 라벨
     final startLabel =

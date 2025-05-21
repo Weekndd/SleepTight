@@ -1,7 +1,10 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sleep_tight/core/config/theme/color.dart';
 import 'package:sleep_tight/core/config/theme/theme.dart';
 import 'package:sleep_tight/core/error/api_exception.dart';
+import 'package:sleep_tight/core/service/fcm_messaging_service.dart';
 import 'package:sleep_tight/core/storage/shared_preferences_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -38,6 +41,10 @@ final apiErrorStreamProvider = StreamProvider<ApiErrorEvent>((ref) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp();
+  await FirebaseMessaging.instance.requestPermission();
+  await FcmService.initFCM();
 
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);

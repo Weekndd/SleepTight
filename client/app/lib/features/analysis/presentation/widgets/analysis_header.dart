@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sleep_tight/core/config/theme/color.dart';
+import 'package:sleep_tight/core/config/theme/text_styles.dart';
 import 'package:sleep_tight/features/analysis/presentation/providers/selected_date_provider.dart';
 import 'package:sleep_tight/features/analysis/presentation/widgets/calendar.dart';
 
@@ -19,10 +20,15 @@ class AnalysisHeader extends ConsumerWidget {
       return days[(weekday - 1) % 7];
     }
 
-    final month = selectedDate.month;
-    final day = selectedDate.day;
-    final dayBefore = selectedDate.day - 1;
-    final weekday = weekdayToKorean(selectedDate.weekday);
+    String getDateRange(DateTime date) {
+      final prev = date.subtract(Duration(days: 1));
+
+      if (date.month != prev.month) {
+        return '${prev.month}/${prev.day}-${date.month}/${date.day} ${weekdayToKorean(date.weekday)}';
+      }
+
+      return '${prev.month}/${prev.day}-${date.day} ${weekdayToKorean(date.weekday)}';
+    }
 
     return SizedBox(
       height: 44,
@@ -31,12 +37,8 @@ class AnalysisHeader extends ConsumerWidget {
         children: [
           Center(
             child: Text(
-              '$month/$dayBefore-$day $weekday',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.white,
-              ),
+              getDateRange(selectedDate),
+              style: AppTextStyles.titleT2Sb(color: AppColors.white),
             ),
           ),
           Positioned(
@@ -65,8 +67,8 @@ class AnalysisHeader extends ConsumerWidget {
                                 },
                                 child: BackdropFilter(
                                   filter: ImageFilter.blur(
-                                    sigmaX: 5,
-                                    sigmaY: 5,
+                                    sigmaX: 4,
+                                    sigmaY: 4,
                                   ),
                                   child: Container(
                                     color: const Color(0xB3000000),
