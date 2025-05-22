@@ -230,6 +230,12 @@ class _SleepReportViewState extends ConsumerState<SleepReportView> {
                               : SizedBox(
                                 height: 100,
                                 child: SleepStageLineChart(stages: stages),
+
+                                // SleepStageLineChartTest(
+                                //   sleepData: stages,
+                                //   sleepStartTime: report.sleepStartTime,
+                                //   sleepEndTime: report.sleepEndTime,
+                                // ),
                               ),
                         ],
                       ),
